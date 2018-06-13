@@ -1,5 +1,10 @@
+CC=gcc
+CFLAGS=-Wall -Wextra -Werror -g -pedantic
+LDFLAGS=-lreadline
+
+
 prompt: prompt.c
-	cc prompt.c -o prompt
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 .PHONY: clean
 

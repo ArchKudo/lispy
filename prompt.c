@@ -1,26 +1,31 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
-static char input[2048];
-
-int main(int argc, char const *argv[])
+int main()
 {
-    printf("LISPY v0.0.1\n");
-    printf("Enter CTRL+C or exit to exit\n");
+    char *input = NULL;
 
+    printf("LISPY v0.0.2\n");
+    printf("Enter CTRL+C or CTRL+D on an empty line to exit\n");
     while (1)
     {
-        printf("lispy> ");
-        scanf("[^\n", input);
+        input = readline("lispy> ");
 
-        // Echo it back
-        printf("%s", input);
-
-        if (strcmp(input, "exit\n"))
+        if (input != NULL)
         {
-            printf("Bye!\n");
+            add_history(input);
+        }
+        else // Handle EOF
+        {
+            printf("Bye!");
             break;
         }
+        // Echo it back
+        printf("%s\n", input);
     }
+    free(input);
     return 0;
 }
