@@ -22,9 +22,20 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 - Update Makefile
 - Release lispy v0.0.2!
 
-## Commit 3
-
-Updated [prompt.c](./prompt.c)
+### Commit 3
 
 - Fixed typo
-- Define TRUE/FALSE
+- Define TRUE/FALSE in [prompt.c](./prompt.c)
+
+### Commit 4
+
+- Added mpc as submodule
+
+### Commit 5
+
+- Symlinked [mpc.h](./mpc.h) and [mpc.c](./mpc.c)
+- Solved some exercises of Chapter 06 at [exercises.md](./exercises.md)
+- Created Parsers for 'Reverse Polish notation' and defined language using Regex
+- Modified prompt to echo ast on correct syntax or, display error
+- Cleanup mpc parsers at exit
+- Released lispy v0.0.3!

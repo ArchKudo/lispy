@@ -1,12 +1,18 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -Werror -g -pedantic
+CFLAGS=-std=c99 \
+		-pedantic -O3 -g -Wall -Werror -Wextra \
+
 LDFLAGS=-lreadline
 
 
-prompt: prompt.c
+
+prompt: prompt.o mpc.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 .PHONY: clean
 
 clean:
-	rm prompt
+	rm prompt *.o
