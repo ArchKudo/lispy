@@ -44,3 +44,8 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 
 - Added modulo(symbol `%`) in list of operators
 - Realized parsers doesn't handle bad input (eg: Bad number of operands)
+
+### Commit 7
+
+- Added .clang-format
+- Formatted prompt.c

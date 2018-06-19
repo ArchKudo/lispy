@@ -1,15 +1,17 @@
+// clang-format off
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+// clang-format on
+#include <stdlib.h>
+#include <string.h>
+
 #include "mpc.h"
 
 #define TRUE 1
 #define FALSE 0
 
-int main()
-{
+int main() {
     // Create parsers
     mpc_parser_t *Number = mpc_new("num");
     mpc_parser_t *Operator = mpc_new("op");
@@ -17,40 +19,34 @@ int main()
     mpc_parser_t *Notation = mpc_new("rpn");
 
     // Define the above parsers with patterns + regex
-    const char *lang = " \
+    const char *lang =
+        " \
                 num   : /-?[0-9]+/ ; \
                 op : '+' | '-' | '*' | '/' | '%' ; \
                 expr     : <num> | '(' <op> <expr>+ ')' ; \
                 rpn    : /^/ <op> <expr>+ /$/ ; \
             ";
-    mpca_lang(MPCA_LANG_DEFAULT, lang,
-              Number, Operator, Expression, Notation);
+    mpca_lang(MPCA_LANG_DEFAULT, lang, Number, Operator, Expression, Notation);
 
     char *input = NULL;
 
     printf("LISPY v0.0.3\n");
     printf("Enter CTRL+C or, CTRL+D on an empty line to exit\n");
-    while (TRUE)
-    {
+    while (TRUE) {
         mpc_result_t result;
         input = readline("lispy> ");
-        if (input != NULL)
-        {
+        if (input != NULL) {
             add_history(input);
-        }
-        else // Handle EOF
+        } else  // Handle EOF
         {
             printf("Bye!");
             break;
         }
 
-        if (mpc_parse("<stdin>", input, Notation, &result))
-        {
+        if (mpc_parse("<stdin>", input, Notation, &result)) {
             mpc_ast_print(result.output);
             mpc_ast_delete(result.output);
-        }
-        else
-        {
+        } else {
             mpc_err_print(result.error);
             mpc_err_delete(result.error);
         }
