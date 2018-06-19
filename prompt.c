@@ -19,7 +19,7 @@ int main()
     // Define the above parsers with patterns + regex
     const char *lang = " \
                 num   : /-?[0-9]+/ ; \
-                op : '+' | '-' | '*' | '/' ; \
+                op : '+' | '-' | '*' | '/' | '%' ; \
                 expr     : <num> | '(' <op> <expr>+ ')' ; \
                 rpn    : /^/ <op> <expr>+ /$/ ; \
             ";

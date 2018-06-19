@@ -39,3 +39,8 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 - Modified prompt to echo ast on correct syntax or, display error
 - Cleanup mpc parsers at exit
 - Released lispy v0.0.3!
+
+### Commit 6
+
+- Added modulo(symbol `%`) in list of operators
+- Realized parsers doesn't handle bad input (eg: Bad number of operands)
