@@ -49,3 +49,9 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 
 - Added .clang-format
 - Formatted prompt.c
+
+### Commit 8
+
+- Updated .clang-format
+- Added .gitignore
+- Initial support for evaluating expressions

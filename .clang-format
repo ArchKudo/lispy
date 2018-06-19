@@ -1,7 +1,2 @@
 BasedOnStyle: Google
 IndentWidth: 4
-AlignEscapedNewlines: Right
-AlignTrailingComments: True
-AllowShortBlocksOnASingleLine: False
-
-
