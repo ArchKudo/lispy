@@ -11,50 +11,57 @@
 #define TRUE 1
 #define FALSE 0
 
-int calculate_nodes(mpc_ast_t *root) {
-    if (root->children_num == 0) {
+int calculate_nodes(mpc_ast_t *node) {
+    // Only parent with no child / Base class
+    if (node->children_num == 0) {
         return 1;
     }
 
+    // Include the parent node
     int total = 1;
-    for (int i = 0; i < root->children_num; i++) {
-        total += calculate_nodes(root->children[i]);
+
+    for (int i = 0; i < node->children_num; i++) {
+        total += calculate_nodes(node->children[i]);
     }
 
     return total;
 }
 
-long eval_op(long x, char *op, long y) {
+long eval_res(char *op, long x, long y) {
+    // TODO: Research is this the only way to do this..
+    // Better function name
     if (strcmp(op, "+") == 0) {
         return x + y;
-    }
-    if (strcmp(op, "-") == 0) {
+    } else if (strcmp(op, "-") == 0) {
         return x - y;
-    }
-    if (strcmp(op, "*") == 0) {
+    } else if (strcmp(op, "*") == 0) {
         return x * y;
-    }
-    if (strcmp(op, "/") == 0) {
+    } else if (strcmp(op, "/") == 0) {
         return x / y;
-    }
-    if (strcmp(op, "%") == 0) {
+    } else if (strcmp(op, "%") == 0) {
         return x % y;
+    } else {
+        return 0;
     }
-    return 0;
 }
 
-long eval_rpn_ast(mpc_ast_t *node) {
+long eval_expr(mpc_ast_t *node) {
+    // Handle base case when leaf contains only a number
     if (strstr(node->tag, "num")) {
         return atoi(node->contents);
     }
 
+    // Opeartor is always the first child
     char *op = node->children[1]->contents;
 
-    long res = eval_rpn_ast(node->children[2]);
+    // Evaluate the first expression
+    // Setting res to 0, 1 will give wrong result for mul/add respectively.
+    long res = eval_expr(node->children[2]);
 
+    // Recurse for later expressions
     int i = 3;
     while (strstr(node->children[i]->tag, "expr")) {
-        res = eval_op(res, op, eval_rpn_ast(node->children[i]));
+        res = eval_res(op, res, eval_expr(node->children[i]));
         i++;
     }
 
@@ -109,7 +116,7 @@ int main() {
                 printf("\tNumber of Children: %d\n", child->children_num);
             }
             printf("==================================\n");
-            printf("Result: %ld\n", eval_rpn_ast(result.output));
+            printf("Result: %ld\n", eval_expr(result.output));
             mpc_ast_delete(result.output);
         } else {
             mpc_err_print(result.error);

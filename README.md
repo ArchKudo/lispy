@@ -55,3 +55,9 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 - Updated .clang-format
 - Added .gitignore
 - Initial support for evaluating expressions
+
+### Commit 9
+
+- Added some comments
+- Renamed some functions
+- Refactor if-else
