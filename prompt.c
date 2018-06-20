@@ -87,7 +87,7 @@ int main() {
 
     char *input = NULL;
 
-    printf("LISPY v0.0.3\n");
+    printf("LISPY v0.0.4\n");
     printf("Enter CTRL+C or, CTRL+D on an empty line to exit\n");
     while (TRUE) {
         mpc_result_t result;
@@ -100,23 +100,7 @@ int main() {
         }
 
         if (mpc_parse("<stdin>", input, Notation, &result)) {
-            mpc_ast_print(result.output);
-            mpc_ast_t *ast = result.output;
-            printf("For Parent,\n");
-            printf("\tTag: %s\n", ast->tag);
-            printf("\tContents: %s\n", ast->contents);
-            printf("\tNumber of Children: %i\n", ast->children_num);
-            printf("\tTotal number of nodes: %d\n", calculate_nodes(ast));
-            mpc_ast_t *child = NULL;
-            for (int i = 0; i < ast->children_num; i++) {
-                child = ast->children[i];
-                printf("For Child %d,\n", i + 1);
-                printf("\tTag: %s\n", child->tag);
-                printf("\tContents: %s\n", child->contents);
-                printf("\tNumber of Children: %d\n", child->children_num);
-            }
-            printf("==================================\n");
-            printf("Result: %ld\n", eval_expr(result.output));
+            printf("%ld\n", eval_expr(result.output));
             mpc_ast_delete(result.output);
         } else {
             mpc_err_print(result.error);

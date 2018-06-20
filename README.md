@@ -61,3 +61,8 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 - Added some comments
 - Renamed some functions
 - Refactor if-else
+
+## Commit 10
+
+- Remove debug print statments
+- Release lispy v0.0.4!
