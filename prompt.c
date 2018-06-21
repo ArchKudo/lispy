@@ -11,22 +11,6 @@
 #define TRUE 1
 #define FALSE 0
 
-int calculate_nodes(mpc_ast_t *node) {
-    // Only parent with no child / Base class
-    if (node->children_num == 0) {
-        return 1;
-    }
-
-    // Include the parent node
-    int total = 1;
-
-    for (int i = 0; i < node->children_num; i++) {
-        total += calculate_nodes(node->children[i]);
-    }
-
-    return total;
-}
-
 long eval_res(char *op, long x, long y) {
     // TODO: Research is this the only way to do this..
     // Better function name

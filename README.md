@@ -66,3 +66,7 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 
 - Remove debug print statments
 - Release lispy v0.0.4!
+
+## Commit 11
+
+- Remove unnecessary function to calculate total number of nodes
