@@ -5,52 +5,11 @@
 // clang-format on
 #include <stdlib.h>
 #include <string.h>
-
+#include "eval.h"
 #include "mpc.h"
 
 #define TRUE 1
 #define FALSE 0
-
-long eval_res(char *op, long x, long y) {
-    // TODO: Research is this the only way to do this..
-    // Better function name
-    if (strcmp(op, "+") == 0) {
-        return x + y;
-    } else if (strcmp(op, "-") == 0) {
-        return x - y;
-    } else if (strcmp(op, "*") == 0) {
-        return x * y;
-    } else if (strcmp(op, "/") == 0) {
-        return x / y;
-    } else if (strcmp(op, "%") == 0) {
-        return x % y;
-    } else {
-        return 0;
-    }
-}
-
-long eval_expr(mpc_ast_t *node) {
-    // Handle base case when leaf contains only a number
-    if (strstr(node->tag, "num")) {
-        return atoi(node->contents);
-    }
-
-    // Opeartor is always the first child
-    char *op = node->children[1]->contents;
-
-    // Evaluate the first expression
-    // Setting res to 0, 1 will give wrong result for mul/add respectively.
-    long res = eval_expr(node->children[2]);
-
-    // Recurse for later expressions
-    int i = 3;
-    while (strstr(node->children[i]->tag, "expr")) {
-        res = eval_res(op, res, eval_expr(node->children[i]));
-        i++;
-    }
-
-    return res;
-}
 
 int main() {
     // Create parsers
@@ -84,7 +43,7 @@ int main() {
         }
 
         if (mpc_parse("<stdin>", input, Notation, &result)) {
-            printf("%ld\n", eval_expr(result.output));
+            printf("%ld\n", eval_rpn(result.output));
             mpc_ast_delete(result.output);
         } else {
             mpc_err_print(result.error);

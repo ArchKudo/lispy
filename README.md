@@ -62,11 +62,17 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 - Renamed some functions
 - Refactor if-else
 
-## Commit 10
+### Commit 10
 
 - Remove debug print statments
 - Release lispy v0.0.4!
 
-## Commit 11
+### Commit 11
 
 - Remove unnecessary function to calculate total number of nodes
+
+### Commit 12
+
+- Move evaluation of ast to seperate [header](./eval.h)
+- Add some documentation
+- Updated Makefile to include eval
