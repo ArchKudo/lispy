@@ -76,3 +76,15 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 - Move evaluation of ast to seperate [header](./eval.h)
 - Add some documentation
 - Updated Makefile to include eval
+
+### Commit 13
+
+Created [lval.h](./lval.h) and [lval.c](./lval.c)
+
+- Store numbers and errors as `LVal`'s (Lispy values)
+- Create methods to operate on `LVal`'s
+- Modify `eval` and `calc` functions to accept and return `LVal`'s
+- Add some kind of error handling using enums
+- Note: `LERR_BAD_OP` is handled by parser...
+- Modified Makefile to include lval.c
+- Removed unnecessary includes from files

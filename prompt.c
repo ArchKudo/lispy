@@ -3,9 +3,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 // clang-format on
-#include <stdlib.h>
-#include <string.h>
-#include "eval.h"
+#include "lval.h"
 #include "mpc.h"
 
 #define TRUE 1
@@ -43,7 +41,7 @@ int main() {
         }
 
         if (mpc_parse("<stdin>", input, Notation, &result)) {
-            printf("%ld\n", eval_rpn(result.output));
+            print_lval(eval(result.output));
             mpc_ast_delete(result.output);
         } else {
             mpc_err_print(result.error);

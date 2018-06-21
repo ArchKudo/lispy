@@ -6,7 +6,7 @@ LDFLAGS=-lreadline
 
 
 
-prompt: prompt.o mpc.o eval.o
+prompt: prompt.o mpc.o lval.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 %.o: %.c
