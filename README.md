@@ -88,3 +88,12 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Note: `LERR_BAD_OP` is handled by parser...
 - Modified Makefile to include lval.c
 - Removed unnecessary includes from files
+
+### Commit 14
+
+- Disabled evaluation for refactoring
+- Removed a lot of memory leaks present from Day 1
+- LVal struct now holds more fields
+- Error are now strings
+- A lot of dead code present
+- Program compiles and gives correct output

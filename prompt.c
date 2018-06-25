@@ -12,28 +12,38 @@
 int main() {
     // Create parsers
     mpc_parser_t *Number = mpc_new("num");
-    mpc_parser_t *Operator = mpc_new("op");
+    mpc_parser_t *Symbol = mpc_new("sym");
     mpc_parser_t *Expression = mpc_new("expr");
-    mpc_parser_t *Notation = mpc_new("rpn");
+    mpc_parser_t *Notation = mpc_new("lisp");
+    mpc_parser_t *SExpression = mpc_new("sexpr");
 
     // Define the above parsers with patterns + regex
     const char *lang =
         " \
                 num   : /-?[0-9]+/ ; \
-                op : '+' | '-' | '*' | '/' | '%' ; \
-                expr     : <num> | '(' <op> <expr>+ ')' ; \
-                rpn    : /^/ <op> <expr>+ /$/ ; \
+                sym : '+' | '-' | '*' | '/' | '%' ; \
+                sexpr: '(' <expr>* ')' ; \
+                expr     : <num> | <sym> | <sexpr> ; \
+                lisp: /^/ <expr>* /$/ ; \
             ";
-    mpca_lang(MPCA_LANG_DEFAULT, lang, Number, Operator, Expression, Notation);
+    mpca_lang(MPCA_LANG_DEFAULT, lang, Number, Symbol, SExpression, Expression,
+              Notation);
 
-    char *input = NULL;
+    static char *input = (char *) NULL;
 
     printf("LISPY v0.0.4\n");
     printf("Enter CTRL+C or, CTRL+D on an empty line to exit\n");
     while (TRUE) {
         mpc_result_t result;
+
+        if (input) {
+            free(input);
+            input = (char *) NULL;
+        }
+
         input = readline("lispy> ");
-        if (input != NULL) {
+
+        if (input) {
             add_history(input);
         } else {  // Handle EOF
             printf("Bye!");
@@ -41,14 +51,16 @@ int main() {
         }
 
         if (mpc_parse("<stdin>", input, Notation, &result)) {
-            print_lval(eval(result.output));
+            LVal *lval = lval_read_ast(result.output);
+            lval_println(lval);
+            lval_del(lval);
             mpc_ast_delete(result.output);
         } else {
             mpc_err_print(result.error);
             mpc_err_delete(result.error);
         }
     }
-    mpc_cleanup(4, Number, Operator, Expression, Notation);
+    mpc_cleanup(5, Number, Symbol, SExpression, Expression, Notation);
     free(input);
     return 0;
 }
