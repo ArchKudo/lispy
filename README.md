@@ -65,7 +65,7 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 ### Commit 10
 
 - Remove debug print statments
-- Release lispy v0.0.4!
+- Released lispy v0.0.4!
 
 ### Commit 11
 
@@ -97,3 +97,10 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Error are now strings
 - A lot of dead code present
 - Program compiles and gives correct output
+
+### Commit 15
+
+- Document public/private functions in lval.c
+- Evaluate expressions
+- Print result of expression rather than expression itself
+- Released lispy v0.0.5!

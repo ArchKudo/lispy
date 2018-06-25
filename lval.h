@@ -4,6 +4,7 @@
 #include "mpc.h"
 
 /* Define some errors */
+// Dead code?
 enum { LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM };
 
 /* LVal Types */
@@ -20,7 +21,7 @@ typedef struct LVal {
     char *err;
     char *sym;
     struct LVal **children;
-    int children_count;
+    int child_count;
 } LVal;
 
 /**
@@ -49,6 +50,6 @@ void lval_del(LVal *lval);
  * @param  *node: Parent/Root node of tree
  * @retval Result of expression
  */
-// LVal eval(mpc_ast_t *node);
+LVal *lval_eval(LVal *lval);
 
 #endif /* lval.h */

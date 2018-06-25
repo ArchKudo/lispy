@@ -29,7 +29,7 @@ int main() {
     mpca_lang(MPCA_LANG_DEFAULT, lang, Number, Symbol, SExpression, Expression,
               Notation);
 
-    static char *input = (char *) NULL;
+    static char *input = (char *)NULL;
 
     printf("LISPY v0.0.4\n");
     printf("Enter CTRL+C or, CTRL+D on an empty line to exit\n");
@@ -38,7 +38,7 @@ int main() {
 
         if (input) {
             free(input);
-            input = (char *) NULL;
+            input = (char *)NULL;
         }
 
         input = readline("lispy> ");
@@ -51,7 +51,7 @@ int main() {
         }
 
         if (mpc_parse("<stdin>", input, Notation, &result)) {
-            LVal *lval = lval_read_ast(result.output);
+            LVal *lval = lval_eval(lval_read_ast(result.output));
             lval_println(lval);
             lval_del(lval);
             mpc_ast_delete(result.output);
