@@ -104,3 +104,14 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Evaluate expressions
 - Print result of expression rather than expression itself
 - Released lispy v0.0.5!
+
+### Commit 16
+
+- Added support for Quoted(Q)-Expressions 
+  - In lang (`{}`)
+  - In LVal types
+- Use macros for simplifying code (`LASSERT`)
+- Refactor code for DRY
+- Added logic for handling `qexpr`
+- Derived `sexpr` functions for use with `qexpr`
+- Added operator for `qexpr` like head, tail, etc.

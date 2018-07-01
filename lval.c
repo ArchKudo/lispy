@@ -3,26 +3,18 @@
 #include <string.h>
 #include "mpc.h"
 
+#define LASSERT(args, cond, err)   \
+    if (!(cond)) {                 \
+        lval_del(args);            \
+        return lval_wrap_err(err); \
+    }
+
 /*
  * Public functions:
  * 1. lval_println
  * 2. lval_read_ast
  * 3. lval_del
  * 4. lval_eval
- *
- * Private function:
- * 1. lval_wrap_long
- * 2. lval_wrap_err
- * 3. lval_wrap_sym
- * 4. lval_wrap_sexpr
- * 5. lval_add
- * 6. lval_read_long
- * 7. lval_print
- * 8. lval_print_sexpr
- * 9. lval_take
- * 10. lval_pop
- * 11. builtin_op
- * 12. lval_eval_sexpr
  */
 
 /**
@@ -33,24 +25,31 @@
 LVal *lval_wrap_long(long val);
 
 /**
- * @brief  Convert an error string to a LVal
- * @param  *err: Description of error as a string
- * @retval LVal with err field set and type LVAL_ERR
+ * @brief  Wrap strings as LVal's
+ * @param  type: Type of LVal (from enum)
+ * @param  *str: String to wrap
+ * @retval A LVal of type: `type`
  */
+LVal *lval_wrap_str(int type, char *str);
+
+// lval_wrap_str with type LVAL_ERR
 LVal *lval_wrap_err(char *err);
 
-/**
- * @brief  Convert an symbol string to a LVal
- * @param  *sym: The symbol string
- * @retval LVal with sym field set and type LVAL_SYM
- */
+// lval_wrap_str with type LVAL_SYM
 LVal *lval_wrap_sym(char *sym);
 
 /**
- * @brief  Create a new SExpression
- * @retval LVal with sexpr field set and type LVAL_SEXPR
+ * @brief  Wrap S/Q-Expressions
+ * @param  type: Type of expression
+ * @retval A LVal of type: `type`
  */
+LVal *lval_wrap_expr(int type);
+
+// lval_wrap_expr with type LVAL_SEXPR
 LVal *lval_wrap_sexpr(void);
+
+// lval_wrap_expr with type LVAL_QEXPR
+LVal *lval_wrap_qexpr(void);
 
 /**
  * @brief  Add a LVal to another LVal
@@ -84,7 +83,12 @@ void lval_print(LVal *lval);
  * @param  close: Character to be inserted at end of S-Expression
  * @retval None
  */
-void lval_print_sexpr(LVal *lval, char open, char close);
+void lval_print_expr(LVal *lval, char open, char close);
+
+// lval_print_expr wrapper for S-Expressions
+void lval_print_sexpr(LVal *lval);
+// lval_print_expr wrapper for Q-Expressions
+void lval_print_qexpr(LVal *lval);
 
 /**
  * @brief  Get child at ith position, delete rest
@@ -117,6 +121,8 @@ LVal *builtin_op(LVal *lval, char *op);
  */
 LVal *lval_eval_sexpr(LVal *lval);
 
+LVal *builtin_table(LVal *lval, char *op_str);
+
 LVal *lval_wrap_long(long val) {
     LVal *lval = malloc(sizeof(LVal));
     lval->type = LVAL_NUM;
@@ -124,29 +130,33 @@ LVal *lval_wrap_long(long val) {
     return lval;
 }
 
-LVal *lval_wrap_err(char *err) {
+LVal *lval_wrap_str(int type, char *str) {
     LVal *lval = malloc(sizeof(LVal));
-    lval->type = LVAL_ERR;
-    lval->err = malloc(strlen(err) + 1);
-    strcpy(lval->err, err);
+    lval->type = type;
+    if (type == LVAL_ERR) {
+        lval->err = malloc(strlen(str) + 1);
+        strcpy(lval->err, str);
+    } else if (type == LVAL_SYM) {
+        lval->sym = malloc(strlen(str) + 1);
+        strcpy(lval->sym, str);
+    }
     return lval;
 }
 
-LVal *lval_wrap_sym(char *sym) {
-    LVal *lval = malloc(sizeof(LVal));
-    lval->type = LVAL_SYM;
-    lval->sym = malloc(strlen(sym) + 1);
-    strcpy(lval->sym, sym);
-    return lval;
-}
+LVal *lval_wrap_err(char *err) { return lval_wrap_str(LVAL_ERR, err); }
 
-LVal *lval_wrap_sexpr(void) {
+LVal *lval_wrap_sym(char *sym) { return lval_wrap_str(LVAL_SYM, sym); }
+
+LVal *lval_wrap_expr(int type) {
     LVal *lval = malloc(sizeof(LVal));
-    lval->type = LVAL_SEXPR;
+    lval->type = type;
     lval->child_count = 0;
     lval->children = NULL;
     return lval;
 }
+
+LVal *lval_wrap_sexpr(void) { return lval_wrap_expr(LVAL_SEXPR); }
+LVal *lval_wrap_qexpr(void) { return lval_wrap_expr(LVAL_QEXPR); }
 
 void lval_del(LVal *lval) {
     switch (lval->type) {
@@ -159,6 +169,7 @@ void lval_del(LVal *lval) {
             free(lval->sym);
             break;
         case LVAL_SEXPR:
+        case LVAL_QEXPR:
             for (int i = 0; i < lval->child_count; i++) {
                 lval_del(lval->children[i]);
             }
@@ -194,11 +205,15 @@ LVal *lval_read_ast(mpc_ast_t *node) {
     LVal *root = NULL;
     if ((strcmp(node->tag, ">") == 0) || (strstr(node->tag, "sexpr"))) {
         root = lval_wrap_sexpr();
+    } else if (strstr(node->tag, "qexpr")) {
+        root = lval_wrap_qexpr();
     }
 
     for (int i = 0; i < node->children_num; i++) {
         if ((strcmp(node->children[i]->contents, "(") == 0) ||
             (strcmp(node->children[i]->contents, ")") == 0) ||
+            (strcmp(node->children[i]->contents, "{") == 0) ||
+            (strcmp(node->children[i]->contents, "}") == 0) ||
             (strcmp(node->children[i]->tag, "regex") == 0)) {
             continue;
         } else {
@@ -214,21 +229,23 @@ void lval_print(LVal *lval) {
             printf("%ld", lval->num);
             break;
         case LVAL_ERR:
-            printf("Error: %s!", lval->err);
+            printf("Error: %s", lval->err);
             break;
         case LVAL_SYM:
             printf("%s", lval->sym);
             break;
         case LVAL_SEXPR:
-            lval_print_sexpr(lval, '(', ')');
+            lval_print_sexpr(lval);
             break;
-
+        case LVAL_QEXPR:
+            lval_print_qexpr(lval);
+            break;
         default:
             break;
     }
 }
 
-void lval_print_sexpr(LVal *lval, char open, char close) {
+void lval_print_expr(LVal *lval, char open, char close) {
     printf("%c", open);
     for (int i = 0; i < lval->child_count; i++) {
         lval_print(lval->children[i]);
@@ -239,6 +256,10 @@ void lval_print_sexpr(LVal *lval, char open, char close) {
     }
     printf("%c", close);
 }
+
+void lval_print_sexpr(LVal *lval) { lval_print_expr(lval, '(', ')'); }
+
+void lval_print_qexpr(LVal *lval) { lval_print_expr(lval, '{', '}'); }
 
 void lval_println(LVal *lval) {
     lval_print(lval);
@@ -278,7 +299,7 @@ LVal *lval_eval_sexpr(LVal *lval) {
     }
 
     // Operate on LVal, after extracting first child(symbol)
-    LVal *result = builtin_op(lval, first->sym);
+    LVal *result = builtin_table(lval, first->sym);
 
     // Delete the first child
     lval_del(first);
@@ -372,4 +393,99 @@ LVal *builtin_op(LVal *lval, char *op) {
 
     lval_del(lval);
     return first;
+}
+
+LVal *builtin_head(LVal *lval) {
+    // First sym is not a child
+    LASSERT(lval, lval->child_count == 1,
+            "\"head\" expected a single argument!");
+
+    LASSERT(lval, lval->children[0]->type == LVAL_QEXPR,
+            "\"head\" expected a Q-Expression as argument!");
+
+    LASSERT(lval, lval->children[0]->child_count != 0,
+            "\"head\" requires a non-empty Q-Expression!");
+
+    LVal *qexpr = lval_take(lval, 0);
+
+    while (qexpr->child_count > 1) {
+        lval_del(lval_pop(qexpr, 1));
+    }
+
+    return qexpr;
+}
+
+LVal *builtin_tail(LVal *lval) {
+    LASSERT(lval, lval->child_count == 1,
+            "\"tail\" expected a single argument!");
+
+    LASSERT(lval, lval->children[0]->type == LVAL_QEXPR,
+            "\"tail\" expected a Q-Expression as argument!");
+
+    LASSERT(lval, lval->children[0]->child_count != 0,
+            "\"tail\" requires a non-empty Q-Expression!");
+
+    LVal *qexpr = lval_take(lval, 0);
+
+    lval_del(lval_pop(qexpr, 0));
+    return qexpr;
+}
+
+LVal *builtin_list(LVal *lval) {
+    lval->type = LVAL_QEXPR;
+    return lval;
+}
+
+LVal *builtin_eval(LVal *lval) {
+    LASSERT(lval, lval->child_count == 1,
+            "\"eval\" expected a single argument");
+
+    LASSERT(lval, lval->child_count == 1,
+            "\"eval\" expected a Q-Expression as argument");
+
+    LVal *qexpr = lval_take(lval, 0);
+    qexpr->type = LVAL_SEXPR;
+    return lval_eval(qexpr);
+}
+
+LVal *lval_join(LVal *x, LVal *y) {
+    while (y->child_count) {
+        x = lval_add(x, lval_pop(y, 0));
+    }
+    lval_del(y);
+    return x;
+}
+
+LVal *builtin_join(LVal *lval) {
+    for (int i = 0; i < lval->child_count; i++) {
+        LASSERT(lval, lval->children[i]->type == LVAL_QEXPR,
+                "\"join\" expected a Q-Expression");
+    }
+
+    LVal *qexpr = lval_pop(lval, 0);
+
+    while (lval->child_count) {
+        qexpr = lval_join(qexpr, lval_pop(lval, 0));
+    }
+
+    lval_del(lval);
+    return qexpr;
+}
+
+LVal *builtin_table(LVal *lval, char *op_str) {
+    if (strcmp("list", op_str) == 0) {
+        return builtin_list(lval);
+    } else if (strcmp("head", op_str) == 0) {
+        return builtin_head(lval);
+    } else if (strcmp("tail", op_str) == 0) {
+        return builtin_tail(lval);
+    } else if (strcmp("eval", op_str) == 0) {
+        return builtin_eval(lval);
+    } else if (strcmp("join", op_str) == 0) {
+        return builtin_join(lval);
+    } else if (strstr("+-/*%", op_str)) {
+        return builtin_op(lval, op_str);
+    }
+    lval_del(lval);
+    return lval_wrap_err("Can't determine type of operation!");
 }

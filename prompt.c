@@ -14,20 +14,23 @@ int main() {
     mpc_parser_t *Number = mpc_new("num");
     mpc_parser_t *Symbol = mpc_new("sym");
     mpc_parser_t *Expression = mpc_new("expr");
-    mpc_parser_t *Notation = mpc_new("lisp");
+    mpc_parser_t *QExpression = mpc_new("qexpr");
     mpc_parser_t *SExpression = mpc_new("sexpr");
+    mpc_parser_t *Notation = mpc_new("lisp");
 
     // Define the above parsers with patterns + regex
     const char *lang =
         " \
-                num   : /-?[0-9]+/ ; \
-                sym : '+' | '-' | '*' | '/' | '%' ; \
+                num: /-?[0-9]+/ ; \
+                sym: '+' | '-' | '*' | '/' | '%' | \
+                    \"list\" | \"head\" | \"tail\" | \"join\" | \"eval\" ; \
                 sexpr: '(' <expr>* ')' ; \
-                expr     : <num> | <sym> | <sexpr> ; \
+                qexpr: '{' <expr>* '}' ; \
+                expr: <num> | <sym> | <sexpr> | <qexpr> ; \
                 lisp: /^/ <expr>* /$/ ; \
             ";
-    mpca_lang(MPCA_LANG_DEFAULT, lang, Number, Symbol, SExpression, Expression,
-              Notation);
+    mpca_lang(MPCA_LANG_DEFAULT, lang, Number, Symbol, SExpression, QExpression,
+              Expression, Notation);
 
     static char *input = (char *)NULL;
 
@@ -60,7 +63,8 @@ int main() {
             mpc_err_delete(result.error);
         }
     }
-    mpc_cleanup(5, Number, Symbol, SExpression, Expression, Notation);
+    mpc_cleanup(6, Number, Symbol, SExpression, Expression, QExpression,
+                Notation);
     free(input);
     return 0;
 }
