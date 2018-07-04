@@ -121,3 +121,7 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Updated prompt to display lispy version v0.0.5
 - Added documentation
 - Divided source file using comments
+
+### Commit 18
+
+- Release Lispy v0.0.6!

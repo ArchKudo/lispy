@@ -34,7 +34,7 @@ int main() {
 
     static char *input = (char *)NULL;
 
-    printf("LISPY v0.0.5\n");
+    printf("LISPY v0.0.6\n");
     printf("Enter CTRL+C or, CTRL+D on an empty line to exit\n");
     while (TRUE) {
         mpc_result_t result;
