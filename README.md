@@ -115,3 +115,9 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Added logic for handling `qexpr`
 - Derived `sexpr` functions for use with `qexpr`
 - Added operator for `qexpr` like head, tail, etc.
+
+### Commit 17
+
+- Updated prompt to display lispy version v0.0.5
+- Added documentation
+- Divided source file using comments

@@ -91,6 +91,13 @@ void lval_print_sexpr(LVal *lval);
 void lval_print_qexpr(LVal *lval);
 
 /**
+ * @brief  Evaluate a S-Expression
+ * @param  *lval: An LVal of type LVAL_SEXPR
+ * @retval Result wrapped as a LVal
+ */
+LVal *lval_eval_sexpr(LVal *lval);
+
+/**
  * @brief  Get child at ith position, delete rest
  * @param  *lval: The parent lval
  * @param  i: Position of child
@@ -115,13 +122,62 @@ LVal *lval_pop(LVal *lval, int i);
 LVal *builtin_op(LVal *lval, char *op);
 
 /**
- * @brief  Evaluate a S-Expression
- * @param  *lval: An LVal of type LVAL_SEXPR
- * @retval Result wrapped as a LVal
+ * @brief  Perform operation based on operator string
+ * @param  *lval: LVal on which operation is to be performed
+ * @param  *op_str: Operator as a string
+ * @retval Resultant LVal
  */
-LVal *lval_eval_sexpr(LVal *lval);
-
 LVal *builtin_table(LVal *lval, char *op_str);
+
+/**
+ * @brief  Returns head of a qexpr
+ * @note   eg: head {0 1 2} => 0
+ * @param  *lval: A lval with type qexpr and atleast one child
+ * @retval Head of qexpr
+ */
+LVal *builtin_head(LVal *lval);
+
+/**
+ * @brief  Return the rest of the qexpr without the head
+ * @note   eg: tail {0 1 2} => {1 2}
+ * @param  *lval: A lval with type qexpr and atleast one child
+ * @retval Tail of qexpr
+ */
+LVal *builtin_tail(LVal *lval);
+
+/**
+ * @brief Convert a LVal sequence to qexpr
+ * @param  *lval: A LVal
+ * @retval Returns an LVal of type LVAL_QEXPR
+ */
+LVal *builtin_list(LVal *lval);
+
+/**
+ * @brief  Evaluate a qexpr
+ * @note   Evaluates a qexpr as a sexpr using lval_eval
+ * @param  *lval: A qexpr
+ * @retval Value of qexpr
+ */
+LVal *builtin_eval(LVal *lval);
+
+/**
+ * @brief  Add an LVal to the end of other
+ * @note   Used only for qexpr in builtin_join
+ * @param  *x: First lval
+ * @param  *y: Second lval
+ * @retval The joined LVal (x+y)
+ */
+LVal *lval_join(LVal *x, LVal *y);
+
+/**
+ * @brief  Join multiple qexpr
+ * @param  *lval: A lval of type LVAL_QEXPR and children of type LVAL_QEXPR
+ * @retval The joined lval
+ */
+LVal *builtin_join(LVal *lval);
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 LVal *lval_wrap_long(long val) {
     LVal *lval = malloc(sizeof(LVal));
@@ -158,6 +214,9 @@ LVal *lval_wrap_expr(int type) {
 LVal *lval_wrap_sexpr(void) { return lval_wrap_expr(LVAL_SEXPR); }
 LVal *lval_wrap_qexpr(void) { return lval_wrap_expr(LVAL_QEXPR); }
 
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
 void lval_del(LVal *lval) {
     switch (lval->type) {
         case LVAL_NUM:
@@ -179,19 +238,22 @@ void lval_del(LVal *lval) {
     free(lval);
 }
 
-LVal *lval_read_long(mpc_ast_t *node) {
-    errno = 0;
-    long val = strtol(node->contents, NULL, 10);
-    return errno != ERANGE ? lval_wrap_long(val)
-                           : lval_wrap_err("Number too large!");
-}
-
 LVal *lval_add(LVal *parent, LVal *child) {
     parent->child_count += 1;
     parent->children =
         realloc(parent->children, sizeof(LVal *) * parent->child_count);
     parent->children[parent->child_count - 1] = child;
     return parent;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+LVal *lval_read_long(mpc_ast_t *node) {
+    errno = 0;
+    long val = strtol(node->contents, NULL, 10);
+    return errno != ERANGE ? lval_wrap_long(val)
+                           : lval_wrap_err("Number too large!");
 }
 
 LVal *lval_read_ast(mpc_ast_t *node) {
@@ -222,6 +284,9 @@ LVal *lval_read_ast(mpc_ast_t *node) {
     }
     return root;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 void lval_print(LVal *lval) {
     switch (lval->type) {
@@ -265,6 +330,9 @@ void lval_println(LVal *lval) {
     lval_print(lval);
     printf("\n");
 }
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 LVal *lval_eval_sexpr(LVal *lval) {
     for (int i = 0; i < lval->child_count; i++) {
@@ -341,6 +409,9 @@ LVal *lval_take(LVal *lval, int i) {
     return popped;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
 LVal *builtin_op(LVal *lval, char *op) {
     // Error handling for non-number values
     for (int i = 0; i < lval->child_count; i++) {
@@ -393,6 +464,24 @@ LVal *builtin_op(LVal *lval, char *op) {
 
     lval_del(lval);
     return first;
+}
+
+LVal *builtin_table(LVal *lval, char *op_str) {
+    if (strcmp("list", op_str) == 0) {
+        return builtin_list(lval);
+    } else if (strcmp("head", op_str) == 0) {
+        return builtin_head(lval);
+    } else if (strcmp("tail", op_str) == 0) {
+        return builtin_tail(lval);
+    } else if (strcmp("eval", op_str) == 0) {
+        return builtin_eval(lval);
+    } else if (strcmp("join", op_str) == 0) {
+        return builtin_join(lval);
+    } else if (strstr("+-/*%", op_str)) {
+        return builtin_op(lval, op_str);
+    }
+    lval_del(lval);
+    return lval_wrap_err("Can't determine type of operation!");
 }
 
 LVal *builtin_head(LVal *lval) {
@@ -472,20 +561,5 @@ LVal *builtin_join(LVal *lval) {
     return qexpr;
 }
 
-LVal *builtin_table(LVal *lval, char *op_str) {
-    if (strcmp("list", op_str) == 0) {
-        return builtin_list(lval);
-    } else if (strcmp("head", op_str) == 0) {
-        return builtin_head(lval);
-    } else if (strcmp("tail", op_str) == 0) {
-        return builtin_tail(lval);
-    } else if (strcmp("eval", op_str) == 0) {
-        return builtin_eval(lval);
-    } else if (strcmp("join", op_str) == 0) {
-        return builtin_join(lval);
-    } else if (strstr("+-/*%", op_str)) {
-        return builtin_op(lval, op_str);
-    }
-    lval_del(lval);
-    return lval_wrap_err("Can't determine type of operation!");
-}
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
