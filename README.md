@@ -107,7 +107,7 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 
 ### Commit 16
 
-- Added support for Quoted(Q)-Expressions 
+- Added support for Quoted(Q)-Expressions
   - In lang (`{}`)
   - In LVal types
 - Use macros for simplifying code (`LASSERT`)
@@ -125,3 +125,16 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 ### Commit 18
 
 - Release Lispy v0.0.6!
+
+### Commit 19
+
+- Forward declare structs `LVal`, `LEnv` along with their `typedef`'s
+- Forward declare function pointer `LBuiltin`
+- Update `LVal` struct to include
+- Declare all public functions of lval.h inside lval.c
+- Remove dead code inside lval.h
+- Restructure lval.c
+- Added comments in lval.c
+- Updated prompt.c and Makefile to use libedit instead of readline
+- Also added a newline character to exit message
+- Commit to make shorter discriptive commits!

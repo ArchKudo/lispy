@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-std=c99 \
 		-pedantic -O3 -g -Wall -Werror -Wextra \
 
-LDFLAGS=-lreadline
+LDFLAGS=-ledit -lncurses
 
 
 

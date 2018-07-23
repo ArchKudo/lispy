@@ -3,26 +3,31 @@
 
 #include "mpc.h"
 
-/* Define some errors */
-// Dead code?
-enum { LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM };
+struct LVal;
+struct LEnv;
+
+typedef struct LVal LVal;
+typedef struct LEnv LEnv;
 
 /* LVal Types */
-enum { LVAL_NUM, LVAL_ERR, LVAL_SYM, LVAL_SEXPR, LVAL_QEXPR };
+enum { LVAL_NUM, LVAL_ERR, LVAL_SYM, LVAL_SEXPR, LVAL_QEXPR, LVAL_FUN };
+
+typedef LVal *(*LBuiltin)(LEnv *, LVal *);
 
 /**
  * @brief  Store number or error in an abstract type
  * @note  LVal are lispy native values
  */
-typedef struct LVal {
+struct LVal {
     int type;
     long num;
 
     char *err;
     char *sym;
+    LBuiltin fun;
     struct LVal **children;
     int child_count;
-} LVal;
+};
 
 /**
  * @brief Print value of LVal adding a new line at the end

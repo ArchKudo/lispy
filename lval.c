@@ -9,13 +9,11 @@
         return lval_wrap_err(err); \
     }
 
-/*
- * Public functions:
- * 1. lval_println
- * 2. lval_read_ast
- * 3. lval_del
- * 4. lval_eval
- */
+///////////////////////////////////////////////////////////////////////////////
+/* Function Declarations */
+///////////////////////////////////////////////////////////////////////////////
+
+/* LVal Wrapper functions */
 
 /**
  * @brief  Convert a long to a LVal
@@ -51,6 +49,45 @@ LVal *lval_wrap_sexpr(void);
 // lval_wrap_expr with type LVAL_QEXPR
 LVal *lval_wrap_qexpr(void);
 
+/* LVal methods for modification and evaluation */
+
+/**
+ * @brief  Delete a LVal
+ * @param  *lval: The LVal which need to be freed along with its contents
+ * @retval None
+ */
+void lval_del(LVal *lval);
+
+/**
+ * @brief  Evaluates RPN ast recursively
+ * @param  *node: Parent/Root node of tree
+ * @retval Result of expression
+ */
+LVal *lval_eval(LVal *lval);
+
+/**
+ * @brief  Evaluate a S-Expression
+ * @param  *lval: An LVal of type LVAL_SEXPR
+ * @retval Result wrapped as a LVal
+ */
+LVal *lval_eval_sexpr(LVal *lval);
+
+/**
+ * @brief  Get child at ith position, delete rest
+ * @param  *lval: The parent lval
+ * @param  i: Position of child
+ * @retval Child at ith position
+ */
+LVal *lval_take(LVal *lval, int i);
+
+/**
+ * @brief  Pop child at ith position
+ * @param  *lval: Parent LVal
+ * @param  i: Location of child
+ * @retval The popped child
+ */
+LVal *lval_pop(LVal *lval, int i);
+
 /**
  * @brief  Add a LVal to another LVal
  * @param  *parent: The parent LVal, the child is added to this LVal
@@ -60,12 +97,39 @@ LVal *lval_wrap_qexpr(void);
 LVal *lval_add(LVal *parent, LVal *child);
 
 /**
+ * @brief  Add an LVal to the end of other
+ * @note   Used only for qexpr in builtin_join
+ * @param  *x: First lval
+ * @param  *y: Second lval
+ * @retval The joined LVal (x+y)
+ */
+LVal *lval_join(LVal *x, LVal *y);
+
+/* MPC AST handlers */
+
+/**
+ * @brief  Read ast as a LVal
+ * @param  *node: The ast to be converted
+ * @retval A LVal
+ */
+LVal *lval_read_ast(mpc_ast_t *node);
+
+/**
  * @brief  Handler for lval_wrap_long
  * @note   Converts string to long converts to LVal on success
  * @param  *node: ast node containing a long number as contents
  * @retval A LVal of type LVAL_NUM on success, LVAL_ERR otherwise
  */
 LVal *lval_read_long(mpc_ast_t *node);
+
+/* LVal printing methods */
+
+/**
+ * @brief Print value of LVal adding a new line at the end
+ * @param  val: An LVal
+ * @retval None
+ */
+void lval_println(LVal *lval);
 
 /**
  * @brief Print value of LVal
@@ -90,28 +154,7 @@ void lval_print_sexpr(LVal *lval);
 // lval_print_expr wrapper for Q-Expressions
 void lval_print_qexpr(LVal *lval);
 
-/**
- * @brief  Evaluate a S-Expression
- * @param  *lval: An LVal of type LVAL_SEXPR
- * @retval Result wrapped as a LVal
- */
-LVal *lval_eval_sexpr(LVal *lval);
-
-/**
- * @brief  Get child at ith position, delete rest
- * @param  *lval: The parent lval
- * @param  i: Position of child
- * @retval Child at ith position
- */
-LVal *lval_take(LVal *lval, int i);
-
-/**
- * @brief  Pop child at ith position
- * @param  *lval: Parent LVal
- * @param  i: Location of child
- * @retval The popped child
- */
-LVal *lval_pop(LVal *lval, int i);
+/* LVal Builtins */
 
 /**
  * @brief  Evaluate operation LVAL_SYM between LVAL_NUM
@@ -161,15 +204,6 @@ LVal *builtin_list(LVal *lval);
 LVal *builtin_eval(LVal *lval);
 
 /**
- * @brief  Add an LVal to the end of other
- * @note   Used only for qexpr in builtin_join
- * @param  *x: First lval
- * @param  *y: Second lval
- * @retval The joined LVal (x+y)
- */
-LVal *lval_join(LVal *x, LVal *y);
-
-/**
  * @brief  Join multiple qexpr
  * @param  *lval: A lval of type LVAL_QEXPR and children of type LVAL_QEXPR
  * @retval The joined lval
@@ -177,12 +211,13 @@ LVal *lval_join(LVal *x, LVal *y);
 LVal *builtin_join(LVal *lval);
 
 ///////////////////////////////////////////////////////////////////////////////
+/* Wrapper functions definitions */
 ///////////////////////////////////////////////////////////////////////////////
 
-LVal *lval_wrap_long(long val) {
+LVal *lval_wrap_long(long num) {
     LVal *lval = malloc(sizeof(LVal));
     lval->type = LVAL_NUM;
-    lval->num = val;
+    lval->num = num;
     return lval;
 }
 
@@ -190,7 +225,10 @@ LVal *lval_wrap_str(int type, char *str) {
     LVal *lval = malloc(sizeof(LVal));
     lval->type = type;
     if (type == LVAL_ERR) {
+        // strlen return length excluding null byte terminator '\0'
+        // [len] + 1 ensures space for the null byte
         lval->err = malloc(strlen(str) + 1);
+        // Copy str to lval->err including null byte
         strcpy(lval->err, str);
     } else if (type == LVAL_SYM) {
         lval->sym = malloc(strlen(str) + 1);
@@ -215,6 +253,7 @@ LVal *lval_wrap_sexpr(void) { return lval_wrap_expr(LVAL_SEXPR); }
 LVal *lval_wrap_qexpr(void) { return lval_wrap_expr(LVAL_QEXPR); }
 
 ///////////////////////////////////////////////////////////////////////////////
+/* Operations on LVal struct */
 ///////////////////////////////////////////////////////////////////////////////
 
 void lval_del(LVal *lval) {

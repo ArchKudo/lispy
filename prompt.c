@@ -1,8 +1,5 @@
-// clang-format off
-#include <stdio.h>
-#include <readline/readline.h>
-#include <readline/history.h>
-// clang-format on
+#include <editline/readline.h>
+
 #include "lval.h"
 #include "mpc.h"
 
@@ -49,7 +46,7 @@ int main() {
         if (input) {
             add_history(input);
         } else {  // Handle EOF
-            printf("Bye!");
+            printf("\nBye!");
             break;
         }
 
