@@ -149,3 +149,9 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Add a function to deep copy `LVal`'s
 - Commented some functions
 - More re-ordering and restructuring of files
+
+### Commit 21
+
+- Declare and define functions to operate on `LEnv`'s
+- Finally have an idea of how `lenv_get` works
+  - i.e the lval passed is itself a symbol instead of a value

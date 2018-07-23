@@ -104,6 +104,40 @@ LVal *lval_pop(LVal *lval, int index);
  */
 LVal *lval_take(LVal *lval, int index);
 
+/* LEnv Functions */
+
+/**
+ * @brief  Create a new LEnv
+ * @retval A LEnv with fields initialized to NULL/0
+ */
+LEnv *lenv_new(void);
+
+/**
+ * @brief  Delete a LEnv
+ * @param  *lenv: The LEnv to be deleted
+ * @retval None
+ */
+void lenv_del(LEnv *lenv);
+
+/**
+ * @brief  Search for LVal of type LVAL_SYM in LEnv "hay" containing the same
+ * symbol(sym) as "pin"
+ * @param  *hay: LEnv "hay" to search the symbol(LVal) "pin" in
+ * @param  *pin: The symbol(LVal) "pin" to be searched for in the LEnv "hay"
+ * @retval A copy of LVal in "hay" having symbol same as "pin" if exists, else
+ * error of the type LVAL_ERR
+ */
+LVal *lenv_get(LEnv *hay, LVal *pin);
+
+/**
+ * @brief  Put an lval with symbol lsym inside lenv
+ * @param  *lenv: A LEnv in which the LVal is to be added
+ * @param  *lsym: The symbol of the LVal which is to be added into LEnv
+ * @param  *lval: The LVal with symbol lsym which is to be added into LEnv
+ * @retval None
+ */
+void lenv_put(LEnv *lenv, LVal *lsym, LVal *lval);
+
 /**
  * @brief  Evaluates RPN ast recursively
  * @param  *node: Parent/Root node of tree
@@ -408,6 +442,68 @@ LVal *lval_take(LVal *lval, int index) {
 
     // Return the popped value
     return popped;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+/* Functions to operate on LEnv's */
+///////////////////////////////////////////////////////////////////////////////
+
+LEnv *lenv_new(void) {
+    LEnv *lenv = malloc(sizeof(LEnv));
+    lenv->child_count = 0;
+    lenv->lvals = NULL;
+    lenv->syms = NULL;
+
+    return lenv;
+}
+
+void lenv_del(LEnv *lenv) {
+    for (int i = 0; i < lenv->child_count; i++) {
+        free(lenv->syms[i]);
+        lval_del(lenv->lvals[i]);
+    }
+
+    free(lenv->lvals);
+    free(lenv->syms);
+    free(lenv);
+}
+
+LVal *lenv_get(LEnv *hay, LVal *pin) {
+    for (int i = 0; i < hay->child_count; i++) {
+        if (strcmp(hay->syms[i], pin->sym) == 0) {
+            return lval_copy(hay->lvals[i]);
+        }
+    }
+
+    return lval_wrap_err("Unbound symbol: '%s'", pin->sym);
+}
+
+void lenv_put(LEnv *lenv, LVal *lsym, LVal *lval) {
+    for (int i = 0; i < lenv->child_count; i++) {
+        // Check if symbol already exists
+        if (strcmp(lenv->syms[i], lsym->sym) == 0) {
+            // If exists, delete it
+            lval_del(lenv->lvals[i]);
+            // Copy the new value from lval
+            lenv->lvals[i] = lval_copy(lval);
+            return;
+        }
+    }
+
+    // If symbol is not present
+
+    // Increase child count
+    lenv->child_count += 1;
+
+    // Reallocate to accomodate new child
+    lenv->lvals = realloc(lenv->lvals, sizeof(LVal *) * lenv->child_count);
+    lenv->syms = realloc(lenv->syms, sizeof(char *) * lenv->child_count);
+
+    // Set symbol and its value as last child
+    lenv->syms[lenv->child_count - 1] = malloc(strlen(lsym->sym) + 1);
+    strcpy(lenv->syms[lenv->child_count - 1], lsym->sym);
+
+    lenv->lvals[lenv->child_count - 1] = lval_copy(lval);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
