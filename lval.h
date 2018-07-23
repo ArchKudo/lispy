@@ -30,6 +30,17 @@ struct LVal {
 };
 
 /**
+ * @brief  A struct to store environment symbols and corresponding LVals as
+ * arrays
+ * @note   // Todo
+ */
+struct LEnv {
+    char **syms;
+    LVal **lvals;
+    int child_count;
+};
+
+/**
  * @brief Print value of LVal adding a new line at the end
  * @param  val: An LVal
  * @retval None

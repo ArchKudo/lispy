@@ -130,7 +130,7 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 
 - Forward declare structs `LVal`, `LEnv` along with their `typedef`'s
 - Forward declare function pointer `LBuiltin`
-- Update `LVal` struct to include
+- Update `LVal` struct to include `LBuiltin`
 - Declare all public functions of lval.h inside lval.c
 - Remove dead code inside lval.h
 - Restructure lval.c
@@ -138,3 +138,14 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Updated prompt.c and Makefile to use libedit instead of readline
 - Also added a newline character to exit message
 - Commit to make shorter discriptive commits!
+
+### Commit 20
+
+- Define `LEnv` struct
+- Modify `lval_wrap_err` to parse variable arguments as error string
+- Add `LVal` wrapper for `LBuiltin`'s
+- Add function to print type of `LVal`
+- Add logic to handle `LBuiltins` in `lval_del`, `lval_print`
+- Add a function to deep copy `LVal`'s
+- Commented some functions
+- More re-ordering and restructuring of files

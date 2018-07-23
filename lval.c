@@ -3,6 +3,8 @@
 #include <string.h>
 #include "mpc.h"
 
+#define MAX_ERR 512
+
 #define LASSERT(args, cond, err)   \
     if (!(cond)) {                 \
         lval_del(args);            \
@@ -30,11 +32,17 @@ LVal *lval_wrap_long(long val);
  */
 LVal *lval_wrap_str(int type, char *str);
 
-// lval_wrap_str with type LVAL_ERR
-LVal *lval_wrap_err(char *err);
-
 // lval_wrap_str with type LVAL_SYM
 LVal *lval_wrap_sym(char *sym);
+
+/**
+ * @brief  Wrap error with variable arguments to LVal
+ * @note Copies a maximum of MAX_ERR bytes including null,
+ *       may lead to truncated error string
+ * @param *fmt: Format of the given variable argument error string
+ * @retval A LVal of type LVAL_ERR
+ */
+LVal *lval_wrap_err(char *fmt, ...);
 
 /**
  * @brief  Wrap S/Q-Expressions
@@ -49,6 +57,12 @@ LVal *lval_wrap_sexpr(void);
 // lval_wrap_expr with type LVAL_QEXPR
 LVal *lval_wrap_qexpr(void);
 
+/**
+ * @brief  Wrap a LBuiltin as an LVal
+ * @param  fun: A LBuiltin
+ * @retval A LVal with type LVAL_FUN
+ */
+LVal *lval_wrap_fun(LBuiltin fun);
 /* LVal methods for modification and evaluation */
 
 /**
@@ -57,6 +71,38 @@ LVal *lval_wrap_qexpr(void);
  * @retval None
  */
 void lval_del(LVal *lval);
+
+/**
+ * @brief  Add a LVal to another LVal
+ * @param  *parent: The parent LVal, the child is added to this LVal
+ * @param  *child: The child LVal which needs to be added
+ * @retval Returns the parent LVal
+ */
+LVal *lval_add(LVal *parent, LVal *child);
+
+/**
+ * @brief  Add an LVal to the end of other
+ * @param  *augend: The parent to which the other LVal is added
+ * @param  *addend: The child which is joined with augend
+ * @retval The joined LVal (augend += addend)
+ */
+LVal *lval_join(LVal *augend, LVal *addend);
+
+/**
+ * @brief  Pop child at ith position
+ * @param  *lval: Parent LVal
+ * @param  index: Location of child
+ * @retval The popped child
+ */
+LVal *lval_pop(LVal *lval, int index);
+
+/**
+ * @brief  Get child at ith position, delete rest
+ * @param  *lval: The parent lval
+ * @param  index: Position of child
+ * @retval Child at ith position
+ */
+LVal *lval_take(LVal *lval, int index);
 
 /**
  * @brief  Evaluates RPN ast recursively
@@ -71,39 +117,6 @@ LVal *lval_eval(LVal *lval);
  * @retval Result wrapped as a LVal
  */
 LVal *lval_eval_sexpr(LVal *lval);
-
-/**
- * @brief  Get child at ith position, delete rest
- * @param  *lval: The parent lval
- * @param  i: Position of child
- * @retval Child at ith position
- */
-LVal *lval_take(LVal *lval, int i);
-
-/**
- * @brief  Pop child at ith position
- * @param  *lval: Parent LVal
- * @param  i: Location of child
- * @retval The popped child
- */
-LVal *lval_pop(LVal *lval, int i);
-
-/**
- * @brief  Add a LVal to another LVal
- * @param  *parent: The parent LVal, the child is added to this LVal
- * @param  *child: The child LVal which needs to be added
- * @retval Returns the parent LVal
- */
-LVal *lval_add(LVal *parent, LVal *child);
-
-/**
- * @brief  Add an LVal to the end of other
- * @note   Used only for qexpr in builtin_join
- * @param  *x: First lval
- * @param  *y: Second lval
- * @retval The joined LVal (x+y)
- */
-LVal *lval_join(LVal *x, LVal *y);
 
 /* MPC AST handlers */
 
@@ -153,6 +166,13 @@ void lval_print_expr(LVal *lval, char open, char close);
 void lval_print_sexpr(LVal *lval);
 // lval_print_expr wrapper for Q-Expressions
 void lval_print_qexpr(LVal *lval);
+
+/**
+ * @brief  Print type of LVal
+ * @param  type: Takes integer value of type for LVAL_TYPE enum
+ * @retval String representing the LVAL_TYPE
+ */
+char *lval_print_type(int type);
 
 /* LVal Builtins */
 
@@ -211,7 +231,7 @@ LVal *builtin_eval(LVal *lval);
 LVal *builtin_join(LVal *lval);
 
 ///////////////////////////////////////////////////////////////////////////////
-/* Wrapper functions definitions */
+/* Functions to wrap primitives as LVal */
 ///////////////////////////////////////////////////////////////////////////////
 
 LVal *lval_wrap_long(long num) {
@@ -237,9 +257,36 @@ LVal *lval_wrap_str(int type, char *str) {
     return lval;
 }
 
-LVal *lval_wrap_err(char *err) { return lval_wrap_str(LVAL_ERR, err); }
-
 LVal *lval_wrap_sym(char *sym) { return lval_wrap_str(LVAL_SYM, sym); }
+
+LVal *lval_wrap_err(char *fmt, ...) {
+    LVal *lerr = malloc(sizeof(LVal));
+    lerr->type = LVAL_ERR;
+
+    // Creating a variable list to store the arguments
+    va_list va;
+
+    // Initialize the va_list
+    // va_start takes two arguments:
+    // The va_list and the last argument before ellipsis
+    va_start(va, fmt);
+
+    // Allocate maximum size of error string
+    lerr->err = malloc(sizeof(MAX_ERR));
+
+    // Copy the va string to lerr->err atmost MAX_ERR bytes including null
+    // Leaving space for null byte is therefore required
+    vsnprintf(lerr->err, MAX_ERR - 1, fmt, va);
+
+    // Resize(Reduce) lerr->err to size of va string from MAX_ERR
+    // Again here, strlen doesn't output size of string including null byte
+    lerr->err = realloc(lerr->err, strlen(lerr->err) + 1);
+
+    // Free va_list
+    va_end(va);
+
+    return lerr;
+}
 
 LVal *lval_wrap_expr(int type) {
     LVal *lval = malloc(sizeof(LVal));
@@ -252,13 +299,21 @@ LVal *lval_wrap_expr(int type) {
 LVal *lval_wrap_sexpr(void) { return lval_wrap_expr(LVAL_SEXPR); }
 LVal *lval_wrap_qexpr(void) { return lval_wrap_expr(LVAL_QEXPR); }
 
+LVal *lval_wrap_fun(LBuiltin fun) {
+    LVal *lfun = malloc(sizeof(LVal));
+    lfun->type = LVAL_FUN;
+    lfun->fun = fun;
+    return lfun;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
-/* Operations on LVal struct */
+/* Functions to operate on LVal struct */
 ///////////////////////////////////////////////////////////////////////////////
 
 void lval_del(LVal *lval) {
     switch (lval->type) {
         case LVAL_NUM:
+        case LVAL_FUN:
             break;
         case LVAL_ERR:
             free(lval->err);
@@ -277,12 +332,82 @@ void lval_del(LVal *lval) {
     free(lval);
 }
 
+LVal *lval_copy(LVal *lval) {
+    LVal *copy = malloc(sizeof(LVal));
+    copy->type = lval->type;
+    switch (copy->type) {
+        case LVAL_NUM:
+            copy->num = lval->num;
+            break;
+        case LVAL_FUN:
+            copy->fun = lval->fun;
+            break;
+        case LVAL_SYM:
+            copy->sym = malloc(strlen(lval->sym) + 1);
+            strcpy(copy->sym, lval->sym);
+            break;
+        case LVAL_ERR:
+            copy->err = malloc(strlen(lval->err) + 1);
+            strcpy(copy->err, lval->err);
+            break;
+        case LVAL_SEXPR:
+        case LVAL_QEXPR:
+            copy->child_count = lval->child_count;
+            for (int i = 0; i < copy->child_count; i++) {
+                copy->children[i] = lval->children[i];
+            }
+            break;
+    }
+    return copy;
+}
+
 LVal *lval_add(LVal *parent, LVal *child) {
     parent->child_count += 1;
     parent->children =
         realloc(parent->children, sizeof(LVal *) * parent->child_count);
+
+    // Last child is child_count - 1 due to 0-based indexing
     parent->children[parent->child_count - 1] = child;
     return parent;
+}
+
+LVal *lval_join(LVal *augend, LVal *addend) {
+    for (int i = 0; i < addend->child_count; i++) {
+        augend = lval_add(augend, addend->children[i]);
+    }
+    free(addend->children);
+    free(addend);
+    return augend;
+}
+
+LVal *lval_pop(LVal *lval, int index) {
+    LVal *popped = lval->children[index];
+
+    // Overwrite the child at `index (to end)` with `index + 1 (to end)`
+    memmove(&lval->children[index],      // Destination
+            &lval->children[index + 1],  // Source
+            (size_t)(sizeof(LVal *) * (lval->child_count - index - 1))  // Size
+    );
+
+    lval->child_count -= 1;
+
+    // Resize the `lval->children` array to the new size (i.e child_count - 1)
+    lval->children =
+        realloc(lval->children, sizeof(LVal *) * lval->child_count);
+
+    // Return LVal at the ith position
+    return popped;
+}
+
+LVal *lval_take(LVal *lval, int index) {
+    // Pop LVal at the given index
+    LVal *popped = lval_pop(lval, index);
+
+    // Delete the rest LVal
+    lval_del(lval);
+
+    // Return the popped value
+    return popped;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -325,12 +450,16 @@ LVal *lval_read_ast(mpc_ast_t *node) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+/* Functions to print LVal's */
 ///////////////////////////////////////////////////////////////////////////////
 
 void lval_print(LVal *lval) {
     switch (lval->type) {
         case LVAL_NUM:
             printf("%ld", lval->num);
+            break;
+        case LVAL_FUN:
+            printf("<function>");
             break;
         case LVAL_ERR:
             printf("Error: %s", lval->err);
@@ -368,6 +497,25 @@ void lval_print_qexpr(LVal *lval) { lval_print_expr(lval, '{', '}'); }
 void lval_println(LVal *lval) {
     lval_print(lval);
     printf("\n");
+}
+
+char *lval_print_type(int type) {
+    switch (type) {
+        case LVAL_NUM:
+            return "Number";
+        case LVAL_FUN:
+            return "Function";
+        case LVAL_SYM:
+            return "Symbol";
+        case LVAL_ERR:
+            return "Error";
+        case LVAL_QEXPR:
+            return "Quoted Expression";
+        case LVAL_SEXPR:
+            return "Symbolic Expression";
+        default:
+            return "Unknown type";
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -418,34 +566,6 @@ LVal *lval_eval(LVal *lval) {
         return lval_eval_sexpr(lval);
     }
     return lval;
-}
-
-LVal *lval_pop(LVal *lval, int i) {
-    LVal *popped = lval->children[i];
-
-    // Push memory location of n+1th to that of nth
-    // i.e |i|i+1|..|n| -> |i+1|..|n|
-    //      ^- Old          ^- New starting address of allocated memory
-    memmove(&lval->children[i], &lval->children[i + 1],
-            (size_t)(sizeof(LVal *) * (lval->child_count - i - 1)));
-
-    lval->child_count -= 1;
-
-    // Resize the `lval->children` array to the new size (i.e child_count - 1)
-    lval->children =
-        realloc(lval->children, sizeof(LVal *) * lval->child_count);
-
-    // Return LVal at the ith position
-    return popped;
-}
-
-LVal *lval_take(LVal *lval, int i) {
-    // Pop LVal at ith index
-    LVal *popped = lval_pop(lval, i);
-    // Delete the rest
-    lval_del(lval);
-    // Return the popped value
-    return popped;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -574,14 +694,6 @@ LVal *builtin_eval(LVal *lval) {
     LVal *qexpr = lval_take(lval, 0);
     qexpr->type = LVAL_SEXPR;
     return lval_eval(qexpr);
-}
-
-LVal *lval_join(LVal *x, LVal *y) {
-    while (y->child_count) {
-        x = lval_add(x, lval_pop(y, 0));
-    }
-    lval_del(y);
-    return x;
 }
 
 LVal *builtin_join(LVal *lval) {
