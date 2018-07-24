@@ -5,11 +5,37 @@
 
 #define MAX_ERR 512
 
-#define LASSERT(args, cond, err)   \
-    if (!(cond)) {                 \
-        lval_del(args);            \
-        return lval_wrap_err(err); \
+// TODO: Add shorter error descriptions
+
+// Assert condition `cond` if not throw error ad delete LVal `lval`
+#define LASSERT(lval, cond, fmt, ...)                                \
+    if (!(cond)) {                                                   \
+        lval_del(lval);                                              \
+        /* __VA_ARGS__ allows to variable number of arguments */     \
+        /* ## in front eats "," on expansion if __VA_ARGS is empty*/ \
+        return lval_wrap_err(fmt, ##__VA_ARGS__);                    \
     }
+
+// Assert if child at ith index has type same as expected else, throw error
+#define LASSERT_TYPE(fun, lval, index, expected)                       \
+    LASSERT(lval, lval->children[index]->type == expected,             \
+            "Function '%s' was passed incorrect type of argument for " \
+            "argument: %i\n"                                           \
+            "Got '%s' expected '%s'\n",                                \
+            fun, index, lval_print_type(lval->children[index]->type),  \
+            lval_print_type(expected))
+
+// Assert if correct number of arguments are passed, by counting children
+#define LASSERT_COUNT(fun, lval, count)                                \
+    LASSERT(lval, lval->child_count == count,                          \
+            "Function '%s' was passed incorrect number of arguments\n" \
+            "Got %i, expected %i",                                     \
+            fun, lval->child_count, count)
+
+// Assert if function fun was passed with no arguments
+#define LASSERT_NOT_EMPTY(fun, lval, index) \
+    LASSERT(lval, lval->child_count != 0,   \
+            "Functions '%s' was passed {} for argument: %i", fun, index)
 
 ///////////////////////////////////////////////////////////////////////////////
 /* Function Declarations */

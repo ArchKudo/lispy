@@ -155,3 +155,10 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Declare and define functions to operate on `LEnv`'s
 - Finally have an idea of how `lenv_get` works
   - i.e the lval passed is itself a symbol instead of a value
+
+### Commit 22
+
+- Updated `LASSERT` to be variadic
+- Added other assertions
+- Added some documentation on the macros
+- Breaks previous `LASSERT`'s
