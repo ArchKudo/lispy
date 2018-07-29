@@ -185,3 +185,13 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Also updated their documentation
 - Improved error-handling in `lval_eval_sexpr`
 - Fixed `lval_eval` signature in `builtin_eval` (which should have been fixed already in earlier commits...)
+
+### Commit 25
+
+- Update documentation for `lval_eval` from previous commit
+- Made some `LEnv` related functions public for prompt.c
+- Created a global `LEnv` for storing session symbols in prompt.c
+- Updated `sym` regex
+- Still need to debug some memory managment issues but somewhat complete
+  - Like dumps core on passing wrong number of arguments to `def`
+  - Reachable blocks are still present even after moving from readline to libedit

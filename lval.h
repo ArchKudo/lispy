@@ -62,10 +62,32 @@ LVal *lval_read_ast(mpc_ast_t *node);
 void lval_del(LVal *lval);
 
 /**
- * @brief  Evaluates RPN ast recursively
- * @param  *node: Parent/Root node of tree
- * @retval Result of expression
+ * @brief  Evaluate an LVal
+ * @note   Fetches symbols from LEnv, Handles SEXPR, or just returns LVal
+ * @param  *lenv: LEnv from which the symbols must be fetched
+ * @param  *lval: A LVal of any type
+ * @retval A LVal computed depending on type (@see @note)
  */
 LVal *lval_eval(LEnv *lenv, LVal *lval);
+
+/**
+ * @brief  Create a new LEnv
+ * @retval A LEnv with fields initialized to NULL/0
+ */
+LEnv *lenv_new(void);
+
+/**
+ * @brief  Delete a LEnv
+ * @param  *lenv: The LEnv to be deleted
+ * @retval None
+ */
+void lenv_del(LEnv *lenv);
+
+/**
+ * @brief  Add default builtins to LEnv
+ * @param  *lenv: The LEnv where the builtins are to be added
+ * @retval None
+ */
+void lenv_init_builtins(LEnv *lenv);
 
 #endif /* lval.h */
