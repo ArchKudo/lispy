@@ -3,7 +3,7 @@
 #include <string.h>
 #include "mpc.h"
 
-#define MAX_ERR 512
+#define MAX_ERR 4096
 
 // TODO: Add shorter error descriptions
 
@@ -21,7 +21,7 @@
     LASSERT(lval, lval->children[index]->type == expected,             \
             "Function '%s' was passed incorrect type of argument for " \
             "argument: %i\n"                                           \
-            "Got '%s' expected '%s'\n",                                \
+            "Got '%s' expected '%s'",                                \
             fun, index, lval_print_type(lval->children[index]->type),  \
             lval_print_type(expected))
 
@@ -35,7 +35,7 @@
 // Assert if function fun was passed with no arguments
 #define LASSERT_CHILD_NOT_EMPTY(fun, lval, index)          \
     LASSERT(lval, lval->children[index]->child_count != 0, \
-            "Functions '%s' was passed {} for argument: %i", fun, index)
+            "Functions '%s' was passed {} for argument at index %i", fun, index)
 
 ///////////////////////////////////////////////////////////////////////////////
 /* Function Declarations */
@@ -349,7 +349,7 @@ LVal *lval_wrap_err(char *fmt, ...) {
     va_start(va, fmt);
 
     // Allocate maximum size of error string
-    lerr->err = malloc(sizeof(MAX_ERR));
+    lerr->err = malloc(MAX_ERR);
 
     // Copy the va string to lerr->err atmost MAX_ERR bytes including null
     // Leaving space for null byte is therefore required
@@ -689,7 +689,7 @@ LVal *lval_eval_sexpr(LEnv *lenv, LVal *lval) {
     // Also free first child and `lval`
     if (first->type != LVAL_FUN) {
         LVal *lerr = lval_wrap_err(
-            "S-Expression starts with incorrect type!"
+            "S-Expression starts with incorrect type!\n"
             "Got %s, Expected %s",
             lval_print_type(first->type), lval_print_type(LVAL_FUN));
         lval_del(first);

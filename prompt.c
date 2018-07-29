@@ -19,7 +19,7 @@ int main() {
     const char *lang =
         " \
                 num: /-?[0-9]+/ ; \
-                sym: /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&]+/ ; \
+                sym: /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%]+/ ; \
                 sexpr: '(' <expr>* ')' ; \
                 qexpr: '{' <expr>* '}' ; \
                 expr: <num> | <sym> | <sexpr> | <qexpr> ; \

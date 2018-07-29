@@ -124,7 +124,7 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 
 ### Commit 18
 
-- Release Lispy v0.0.6!
+- Release lispy v0.0.6!
 
 ### Commit 19
 
@@ -195,3 +195,14 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Still need to debug some memory managment issues but somewhat complete
   - Like dumps core on passing wrong number of arguments to `def`
   - Reachable blocks are still present even after moving from readline to libedit
+
+
+### Commit 26
+
+- Turns out: >   - Like dumps core on passing wrong number of arguments to `def`
+  - Dumps core for every builtin
+- Fixed the above described bug by removing typo s/`sizeof(MAX_ERR)`/`MAX_ERR`
+- Fixed some error string formatting
+- Add modulo to list of symbols
+- Still a bit hazy how `LBuiltin`'s work as a whole..
+- Release lispy v0.0.7!
