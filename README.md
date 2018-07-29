@@ -178,3 +178,10 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
   - which led to -Wunused-parameter which was resolved adding a `void` statment
 - Added modulo operator logic in `builtin_op` which to my suprise was missing!
 - Added methods to declare and intialize `builtin`'s inside `LEnv`'s
+
+### Commit 24
+
+- Update signature and definition of `lval_eval*` to accept `LEnv` for getting symbols
+- Also updated their documentation
+- Improved error-handling in `lval_eval_sexpr`
+- Fixed `lval_eval` signature in `builtin_eval` (which should have been fixed already in earlier commits...)

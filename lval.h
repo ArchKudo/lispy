@@ -66,6 +66,6 @@ void lval_del(LVal *lval);
  * @param  *node: Parent/Root node of tree
  * @retval Result of expression
  */
-LVal *lval_eval(LVal *lval);
+LVal *lval_eval(LEnv *lenv, LVal *lval);
 
 #endif /* lval.h */

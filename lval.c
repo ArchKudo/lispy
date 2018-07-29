@@ -165,18 +165,21 @@ LVal *lenv_get(LEnv *hay, LVal *pin);
 void lenv_put(LEnv *lenv, LVal *lsym, LVal *lval);
 
 /**
- * @brief  Evaluates RPN ast recursively
- * @param  *node: Parent/Root node of tree
- * @retval Result of expression
+ * @brief  Evaluate an LVal
+ * @note   Fetches symbols from LEnv, Handles SEXPR, or just returns LVal
+ * @param  *lenv: LEnv from which the symbols must be fetched
+ * @param  *lval: A LVal of any type
+ * @retval A LVal computed depending on type (@see @note)
  */
-LVal *lval_eval(LVal *lval);
+LVal *lval_eval(LEnv *lenv, LVal *lval);
 
 /**
  * @brief  Evaluate a S-Expression
- * @param  *lval: An LVal of type LVAL_SEXPR
+ * @param  *lenv: A LEnv which contains symbol list
+ * @param  *lval: A LVal of type LVAL_SEXPR
  * @retval Result wrapped as a LVal
  */
-LVal *lval_eval_sexpr(LVal *lval);
+LVal *lval_eval_sexpr(LEnv *lenv, LVal *lval);
 
 /* MPC AST handlers */
 
@@ -657,11 +660,12 @@ char *lval_print_type(int type) {
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-LVal *lval_eval_sexpr(LVal *lval) {
+LVal *lval_eval_sexpr(LEnv *lenv, LVal *lval) {
     for (int i = 0; i < lval->child_count; i++) {
-        lval->children[i] = lval_eval(lval->children[i]);
+        lval->children[i] = lval_eval(lenv, lval->children[i]);
     }
 
+    // If there is an error return error, discard LVal
     for (int i = 0; i < lval->child_count; i++) {
         if (lval->children[i]->type == LVAL_ERR) {
             return lval_take(lval, i);
@@ -681,26 +685,39 @@ LVal *lval_eval_sexpr(LVal *lval) {
     // Get the first child
     LVal *first = lval_pop(lval, 0);
 
-    // Raise error if first child isn't a symbol
-    // Also free's first child and `lval`
-    if (first->type != LVAL_SYM) {
+    // Raise error if first child isn't a builtin
+    // Also free first child and `lval`
+    if (first->type != LVAL_FUN) {
+        LVal *lerr = lval_wrap_err(
+            "S-Expression starts with incorrect type!"
+            "Got %s, Expected %s",
+            lval_print_type(first->type), lval_print_type(LVAL_FUN));
         lval_del(first);
         lval_del(lval);
-        return lval_wrap_err("S-Expression doesn't starts with a symbol!");
+        return lerr;
     }
 
-    // Operate on LVal, after extracting first child(symbol)
-    LVal *result = builtin_table(lval, first->sym);
+    // Invoke the LBuiltin
+    LVal *result = first->fun(lenv, lval);
 
     // Delete the first child
     lval_del(first);
+
     return result;
 }
 
-LVal *lval_eval(LVal *lval) {
-    if (lval->type == LVAL_SEXPR) {
-        return lval_eval_sexpr(lval);
+LVal *lval_eval(LEnv *lenv, LVal *lval) {
+    // If a symbol get value from LEnv
+    if (lval->type == LVAL_SYM) {
+        LVal *lsym = lenv_get(lenv, lval);
+        lval_del(lval);
+        return lsym;
     }
+
+    if (lval->type == LVAL_SEXPR) {
+        return lval_eval_sexpr(lenv, lval);
+    }
+
     return lval;
 }
 
@@ -763,7 +780,7 @@ LVal *builtin_eval(LEnv *lenv, LVal *lval) {
     LVal *qexpr = lval_take(lval, 0);
     // Evaluate as an SEXPR
     qexpr->type = LVAL_SEXPR;
-    return lval_eval(qexpr);
+    return lval_eval(lenv, qexpr);
 }
 
 LVal *builtin_join(LEnv *lenv, LVal *lval) {
