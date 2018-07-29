@@ -64,12 +64,12 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 
 ### Commit 10
 
-- Remove debug print statments
+- Removed debug print statments
 - Released lispy v0.0.4!
 
 ### Commit 11
 
-- Remove unnecessary function to calculate total number of nodes
+- Removed unnecessary function to calculate total number of nodes
 
 ### Commit 12
 
@@ -162,3 +162,19 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Added other assertions
 - Added some documentation on the macros
 - Breaks previous `LASSERT`'s
+
+### Commit 23
+
+- Fix `LASSERT_NOT_EMPTY` to check for children of child of `LVal` instead, of child itself
+- Update various builtins signature to pass `LEnv`'s
+- Rename `LASSERT_*` to `LASSERT_CHILD_*` for explicitness
+- Accidentally replaced all `a`'s with `lval` in comments..
+  - Similarly with `e` and `lenv`
+  - Resolved using my superb REGEX skills and determination!
+- Also made some corrections along the way to comments
+- For some weird reason I find `An LVal, An LEnv` more natural than using `A ...`
+- Builtins like list, head, tail, eval, etc. now also require passing an LEnv
+  - Passed an `LEnv` even when not required,
+  - which led to -Wunused-parameter which was resolved adding a `void` statment
+- Added modulo operator logic in `builtin_op` which to my suprise was missing!
+- Added methods to declare and intialize `builtin`'s inside `LEnv`'s

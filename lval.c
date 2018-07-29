@@ -7,7 +7,7 @@
 
 // TODO: Add shorter error descriptions
 
-// Assert condition `cond` if not throw error ad delete LVal `lval`
+// Assert condition `cond` if not throw error and delete LVal `lval`
 #define LASSERT(lval, cond, fmt, ...)                                \
     if (!(cond)) {                                                   \
         lval_del(lval);                                              \
@@ -17,7 +17,7 @@
     }
 
 // Assert if child at ith index has type same as expected else, throw error
-#define LASSERT_TYPE(fun, lval, index, expected)                       \
+#define LASSERT_CHILD_TYPE(fun, lval, index, expected)                 \
     LASSERT(lval, lval->children[index]->type == expected,             \
             "Function '%s' was passed incorrect type of argument for " \
             "argument: %i\n"                                           \
@@ -26,15 +26,15 @@
             lval_print_type(expected))
 
 // Assert if correct number of arguments are passed, by counting children
-#define LASSERT_COUNT(fun, lval, count)                                \
+#define LASSERT_CHILD_COUNT(fun, lval, count)                          \
     LASSERT(lval, lval->child_count == count,                          \
             "Function '%s' was passed incorrect number of arguments\n" \
             "Got %i, expected %i",                                     \
             fun, lval->child_count, count)
 
 // Assert if function fun was passed with no arguments
-#define LASSERT_NOT_EMPTY(fun, lval, index) \
-    LASSERT(lval, lval->child_count != 0,   \
+#define LASSERT_CHILD_NOT_EMPTY(fun, lval, index)          \
+    LASSERT(lval, lval->children[index]->child_count != 0, \
             "Functions '%s' was passed {} for argument: %i", fun, index)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -156,7 +156,7 @@ void lenv_del(LEnv *lenv);
 LVal *lenv_get(LEnv *hay, LVal *pin);
 
 /**
- * @brief  Put an lval with symbol lsym inside lenv
+ * @brief  Put an LVal with symbol lsym inside a LEnv
  * @param  *lenv: A LEnv in which the LVal is to be added
  * @param  *lsym: The symbol of the LVal which is to be added into LEnv
  * @param  *lval: The LVal with symbol lsym which is to be added into LEnv
@@ -237,58 +237,72 @@ char *lval_print_type(int type);
 /* LVal Builtins */
 
 /**
- * @brief  Evaluate operation LVAL_SYM between LVAL_NUM
- * @param  *lval: LVal containing numbers as children
- * @param  *op: Corresponding operator as string for the operation
- * @retval Result wrapped as LVal
+ * @brief Convert a LVal sequence to qexpr
+ * @param  *lval: A LVal
+ * @param  *lenv: Not used
+ * @retval Returns an LVal of type LVAL_QEXPR
  */
-LVal *builtin_op(LVal *lval, char *op);
-
-/**
- * @brief  Perform operation based on operator string
- * @param  *lval: LVal on which operation is to be performed
- * @param  *op_str: Operator as a string
- * @retval Resultant LVal
- */
-LVal *builtin_table(LVal *lval, char *op_str);
+LVal *builtin_list(LEnv *lenv, LVal *lval);
 
 /**
  * @brief  Returns head of a qexpr
  * @note   eg: head {0 1 2} => 0
- * @param  *lval: A lval with type qexpr and atleast one child
+ * @param  *lenv: Not used
+ * @param  *lval: A LVal with type qexpr and atleast one child
  * @retval Head of qexpr
  */
-LVal *builtin_head(LVal *lval);
+LVal *builtin_head(LEnv *lenv, LVal *lval);
 
 /**
  * @brief  Return the rest of the qexpr without the head
  * @note   eg: tail {0 1 2} => {1 2}
- * @param  *lval: A lval with type qexpr and atleast one child
+ * @param  *lenv: Not used
+ * @param  *lval: A LVal with type qexpr and atleast one child
  * @retval Tail of qexpr
  */
-LVal *builtin_tail(LVal *lval);
-
-/**
- * @brief Convert a LVal sequence to qexpr
- * @param  *lval: A LVal
- * @retval Returns an LVal of type LVAL_QEXPR
- */
-LVal *builtin_list(LVal *lval);
+LVal *builtin_tail(LEnv *lenv, LVal *lval);
 
 /**
  * @brief  Evaluate a qexpr
  * @note   Evaluates a qexpr as a sexpr using lval_eval
- * @param  *lval: A qexpr
+ * @param  *lenv: Not used
+ * @param  *lval: LVal of type LVAL_QEXPR
  * @retval Value of qexpr
  */
-LVal *builtin_eval(LVal *lval);
+LVal *builtin_eval(LEnv *lenv, LVal *lval);
 
 /**
  * @brief  Join multiple qexpr
- * @param  *lval: A lval of type LVAL_QEXPR and children of type LVAL_QEXPR
+ * @param  *lenv: Not used
+ * @param  *lval: LVal of type LVAL_QEXPR with children of type LVAL_QEXPR
  * @retval The joined lval
  */
-LVal *builtin_join(LVal *lval);
+LVal *builtin_join(LEnv *lenv, LVal *lval);
+
+/**
+ * @brief  Evaluate operation LVAL_SYM between LVAL_NUM
+ * @param  *lenv: Not used
+ * @param  *lval: LVal containing numbers as children
+ * @param  *op: Corresponding operator as string for the operation
+ * @retval Result wrapped as LVal
+ */
+LVal *builtin_op(LEnv *lenv, LVal *lval, char *op);
+
+/**
+ * @brief  Associate a builtin and its symbol in a LEnv
+ * @param  *lenv: The LEnv where the builtin is to be stored
+ * @param  *sym: The symbol name of the builtin
+ * @param  fun: The lbuilitin to be associated with sym
+ * @retval None
+ */
+void lenv_add_builtin(LEnv *lenv, char *sym, LBuiltin fun);
+
+/**
+ * @brief  Add default builtins to LEnv
+ * @param  *lenv: The LEnv where the builtins are to be added
+ * @retval None
+ */
+void lenv_init_builtins(LEnv *lenv);
 
 ///////////////////////////////////////////////////////////////////////////////
 /* Functions to wrap primitives as LVal */
@@ -323,7 +337,7 @@ LVal *lval_wrap_err(char *fmt, ...) {
     LVal *lerr = malloc(sizeof(LVal));
     lerr->type = LVAL_ERR;
 
-    // Creating a variable list to store the arguments
+    // Create a variable list to store the arguments
     va_list va;
 
     // Initialize the va_list
@@ -463,7 +477,7 @@ LVal *lval_take(LVal *lval, int index) {
     // Pop LVal at the given index
     LVal *popped = lval_pop(lval, index);
 
-    // Delete the rest LVal
+    // Delete the rest of the LVal
     lval_del(lval);
 
     // Return the popped value
@@ -510,7 +524,7 @@ void lenv_put(LEnv *lenv, LVal *lsym, LVal *lval) {
         if (strcmp(lenv->syms[i], lsym->sym) == 0) {
             // If exists, delete it
             lval_del(lenv->lvals[i]);
-            // Copy the new value from lval
+            // Copy the new value from LVal
             lenv->lvals[i] = lval_copy(lval);
             return;
         }
@@ -668,7 +682,7 @@ LVal *lval_eval_sexpr(LVal *lval) {
     LVal *first = lval_pop(lval, 0);
 
     // Raise error if first child isn't a symbol
-    // Also free's first child and lval
+    // Also free's first child and `lval`
     if (first->type != LVAL_SYM) {
         lval_del(first);
         lval_del(lval);
@@ -691,15 +705,91 @@ LVal *lval_eval(LVal *lval) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+/* Language built-in(LEnv) functions for operation on different LVal types */
 ///////////////////////////////////////////////////////////////////////////////
 
-LVal *builtin_op(LVal *lval, char *op) {
+LVal *builtin_list(LEnv *lenv, LVal *lval) {
+    (void)lenv;
+    lval->type = LVAL_QEXPR;
+    return lval;
+}
+
+LVal *builtin_head(LEnv *lenv, LVal *lval) {
+    (void)lenv;
+    // Assert head is passed a single argument
+    // i.e head has a single child
+    LASSERT_CHILD_COUNT("head", lval, 1);
+
+    // Assert head's first child is a QEXPR
+    LASSERT_CHILD_TYPE("head", lval, 0, LVAL_QEXPR);
+
+    // Assert QEXPR passed to head was not empty
+    LASSERT_CHILD_NOT_EMPTY("head", lval, 0);
+
+    // Get first child i.lenv first argument of head
+    LVal *qexpr = lval_take(lval, 0);
+
+    // Pop all elements(children) of qexpr except first
+    while (qexpr->child_count > 1) {
+        lval_del(lval_pop(qexpr, 1));
+    }
+
+    return qexpr;
+}
+
+LVal *builtin_tail(LEnv *lenv, LVal *lval) {
+    (void)lenv;
+    LASSERT_CHILD_COUNT("tail", lval, 1);
+
+    LASSERT_CHILD_TYPE("tail", lval, 0, LVAL_QEXPR);
+
+    LASSERT_CHILD_NOT_EMPTY("tail", lval, 0);
+
+    // Get heads first argument
+    LVal *qexpr = lval_take(lval, 0);
+
+    // Only delete the first child of the argument
+    lval_del(lval_pop(qexpr, 0));
+    return qexpr;
+}
+
+LVal *builtin_eval(LEnv *lenv, LVal *lval) {
+    (void)lenv;
+    LASSERT_CHILD_COUNT("eval", lval, 1);
+
+    LASSERT_CHILD_TYPE("eval", lval, 0, LVAL_QEXPR);
+
+    // Get the first argument
+    LVal *qexpr = lval_take(lval, 0);
+    // Evaluate as an SEXPR
+    qexpr->type = LVAL_SEXPR;
+    return lval_eval(qexpr);
+}
+
+LVal *builtin_join(LEnv *lenv, LVal *lval) {
+    (void)lenv;
+    for (int i = 0; i < lval->child_count; i++) {
+        LASSERT_CHILD_TYPE("join", lval, i, LVAL_QEXPR);
+    }
+
+    // Get the first arg of head
+    LVal *qexpr = lval_pop(lval, 0);
+
+    // Join the remaining args to the first
+    while (lval->child_count) {
+        qexpr = lval_join(qexpr, lval_pop(lval, 0));
+    }
+
+    // Delete the LVal
+    lval_del(lval);
+    return qexpr;
+}
+
+LVal *builtin_op(LEnv *lenv, LVal *lval, char *op) {
+    (void)lenv;
     // Error handling for non-number values
     for (int i = 0; i < lval->child_count; i++) {
-        if (lval->children[i]->type != LVAL_NUM) {
-            lval_del(lval);
-            return lval_wrap_err("Cannot operate on non-number!");
-        }
+        LASSERT_CHILD_TYPE(op, lval, i, LVAL_NUM);
     }
 
     // Get the first operand
@@ -740,6 +830,10 @@ LVal *builtin_op(LVal *lval, char *op) {
             first->num /= second->num;
         }
 
+        if (strcmp(op, "%") == 0) {
+            first->num %= second->num;
+        }
+
         lval_del(second);
     }
 
@@ -747,91 +841,77 @@ LVal *builtin_op(LVal *lval, char *op) {
     return first;
 }
 
-LVal *builtin_table(LVal *lval, char *op_str) {
-    if (strcmp("list", op_str) == 0) {
-        return builtin_list(lval);
-    } else if (strcmp("head", op_str) == 0) {
-        return builtin_head(lval);
-    } else if (strcmp("tail", op_str) == 0) {
-        return builtin_tail(lval);
-    } else if (strcmp("eval", op_str) == 0) {
-        return builtin_eval(lval);
-    } else if (strcmp("join", op_str) == 0) {
-        return builtin_join(lval);
-    } else if (strstr("+-/*%", op_str)) {
-        return builtin_op(lval, op_str);
-    }
-    lval_del(lval);
-    return lval_wrap_err("Can't determine type of operation!");
+LVal *builtin_add(LEnv *lenv, LVal *lval) {
+    return builtin_op(lenv, lval, "+");
 }
 
-LVal *builtin_head(LVal *lval) {
-    // First sym is not a child
-    LASSERT(lval, lval->child_count == 1,
-            "\"head\" expected a single argument!");
-
-    LASSERT(lval, lval->children[0]->type == LVAL_QEXPR,
-            "\"head\" expected a Q-Expression as argument!");
-
-    LASSERT(lval, lval->children[0]->child_count != 0,
-            "\"head\" requires a non-empty Q-Expression!");
-
-    LVal *qexpr = lval_take(lval, 0);
-
-    while (qexpr->child_count > 1) {
-        lval_del(lval_pop(qexpr, 1));
-    }
-
-    return qexpr;
+LVal *builtin_sub(LEnv *lenv, LVal *lval) {
+    return builtin_op(lenv, lval, "-");
 }
 
-LVal *builtin_tail(LVal *lval) {
-    LASSERT(lval, lval->child_count == 1,
-            "\"tail\" expected a single argument!");
-
-    LASSERT(lval, lval->children[0]->type == LVAL_QEXPR,
-            "\"tail\" expected a Q-Expression as argument!");
-
-    LASSERT(lval, lval->children[0]->child_count != 0,
-            "\"tail\" requires a non-empty Q-Expression!");
-
-    LVal *qexpr = lval_take(lval, 0);
-
-    lval_del(lval_pop(qexpr, 0));
-    return qexpr;
+LVal *builtin_mul(LEnv *lenv, LVal *lval) {
+    return builtin_op(lenv, lval, "*");
 }
 
-LVal *builtin_list(LVal *lval) {
-    lval->type = LVAL_QEXPR;
-    return lval;
+LVal *builtin_div(LEnv *lenv, LVal *lval) {
+    return builtin_op(lenv, lval, "/");
 }
 
-LVal *builtin_eval(LVal *lval) {
-    LASSERT(lval, lval->child_count == 1,
-            "\"eval\" expected a single argument");
-
-    LASSERT(lval, lval->child_count == 1,
-            "\"eval\" expected a Q-Expression as argument");
-
-    LVal *qexpr = lval_take(lval, 0);
-    qexpr->type = LVAL_SEXPR;
-    return lval_eval(qexpr);
+LVal *builtin_mod(LEnv *lenv, LVal *lval) {
+    return builtin_op(lenv, lval, "%");
 }
 
-LVal *builtin_join(LVal *lval) {
-    for (int i = 0; i < lval->child_count; i++) {
-        LASSERT(lval, lval->children[i]->type == LVAL_QEXPR,
-                "\"join\" expected a Q-Expression");
+LVal *builtin_def(LEnv *lenv, LVal *lval) {
+    // Syntax is of the form:
+    //`def {sym1, sym2, ...} val1, val2, ...`
+    //     ^- Child 0        ^- Child 1  ^- Child N
+
+    // Check whether Child 0 is a QEXPR
+    LASSERT_CHILD_TYPE("def", lval, 0, LVAL_QEXPR);
+
+    // Get the symbol list(QEXPR)
+    LVal *var_list = lval->children[0];
+
+    // Assert all var_list members are symbols
+    for (int i = 0; i < var_list->child_count; i++) {
+        LASSERT_CHILD_TYPE("def", var_list, i, LVAL_SYM);
     }
 
-    LVal *qexpr = lval_pop(lval, 0);
+    // Assert there are enough values for all symbols in var list
+    LASSERT_CHILD_COUNT("def", var_list, lval->child_count - 1);
 
-    while (lval->child_count) {
-        qexpr = lval_join(qexpr, lval_pop(lval, 0));
+    for (int i = 0; i < var_list->child_count; i++) {
+        // Put variable symbols and their values in the env
+        lenv_put(lenv, var_list->children[i], lval->children[i + 1]);
     }
 
     lval_del(lval);
-    return qexpr;
+    return lval_wrap_sexpr();
+}
+
+void lenv_add_builtin(LEnv *lenv, char *sym, LBuiltin fun) {
+    LVal *lsym = lval_wrap_sym(sym);
+    LVal *lfun = lval_wrap_fun(fun);
+
+    lenv_put(lenv, lsym, lfun);
+    lval_del(lsym);
+    lval_del(lfun);
+}
+
+void lenv_init_builtins(LEnv *lenv) {
+    lenv_add_builtin(lenv, "def", builtin_def);
+    lenv_add_builtin(lenv, "list", builtin_list);
+    lenv_add_builtin(lenv, "head", builtin_head);
+    lenv_add_builtin(lenv, "tail", builtin_tail);
+    lenv_add_builtin(lenv, "eval", builtin_eval);
+    lenv_add_builtin(lenv, "join", builtin_join);
+
+    lenv_add_builtin(lenv, "+", builtin_add);
+
+    lenv_add_builtin(lenv, "-", builtin_sub);
+    lenv_add_builtin(lenv, "*", builtin_mul);
+    lenv_add_builtin(lenv, "/", builtin_div);
+    lenv_add_builtin(lenv, "%", builtin_mod);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
