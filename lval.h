@@ -19,12 +19,22 @@ typedef LVal *(*LBuiltin)(LEnv *, LVal *);
  * @note  LVal are lispy native values
  */
 struct LVal {
+    /* Type */
     int type;
+
+    /* Value */
     long num;
 
     char *err;
     char *sym;
-    LBuiltin fun;
+
+    /* Functions */
+    LBuiltin lbuiltin;
+    LEnv *lenv;
+    LVal *lformals;
+    LVal *lbody;
+
+    /* Expressions */
     struct LVal **children;
     int child_count;
 };

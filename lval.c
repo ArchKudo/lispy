@@ -17,25 +17,26 @@
     }
 
 // Assert if child at ith index has type same as expected else, throw error
-#define LASSERT_CHILD_TYPE(fun, lval, index, expected)                 \
-    LASSERT(lval, lval->children[index]->type == expected,             \
-            "Function '%s' was passed incorrect type of argument for " \
-            "argument: %i\n"                                           \
-            "Got '%s' expected '%s'",                                \
-            fun, index, lval_print_type(lval->children[index]->type),  \
+#define LASSERT_CHILD_TYPE(lbuiltin, lval, index, expected)                \
+    LASSERT(lval, lval->children[index]->type == expected,                 \
+            "Function '%s' was passed incorrect type of argument for "     \
+            "argument: %i\n"                                               \
+            "Got '%s' expected '%s'",                                      \
+            lbuiltin, index, lval_print_type(lval->children[index]->type), \
             lval_print_type(expected))
 
 // Assert if correct number of arguments are passed, by counting children
-#define LASSERT_CHILD_COUNT(fun, lval, count)                          \
+#define LASSERT_CHILD_COUNT(lbuiltin, lval, count)                     \
     LASSERT(lval, lval->child_count == count,                          \
             "Function '%s' was passed incorrect number of arguments\n" \
             "Got %i, expected %i",                                     \
-            fun, lval->child_count, count)
+            lbuiltin, lval->child_count, count)
 
-// Assert if function fun was passed with no arguments
-#define LASSERT_CHILD_NOT_EMPTY(fun, lval, index)          \
-    LASSERT(lval, lval->children[index]->child_count != 0, \
-            "Functions '%s' was passed {} for argument at index %i", fun, index)
+// Assert if function lbuiltin was passed with no arguments
+#define LASSERT_CHILD_NOT_EMPTY(lbuiltin, lval, index)                         \
+    LASSERT(lval, lval->children[index]->child_count != 0,                     \
+            "Functions '%s' was passed {} for argument at index %i", lbuiltin, \
+            index)
 
 ///////////////////////////////////////////////////////////////////////////////
 /* Function Declarations */
@@ -85,10 +86,10 @@ LVal *lval_wrap_qexpr(void);
 
 /**
  * @brief  Wrap a LBuiltin as an LVal
- * @param  fun: A LBuiltin
+ * @param  lbuiltin: A LBuiltin
  * @retval A LVal with type LVAL_FUN
  */
-LVal *lval_wrap_fun(LBuiltin fun);
+LVal *lval_wrap_lbuiltin(LBuiltin lbuiltin);
 /* LVal methods for modification and evaluation */
 
 /**
@@ -295,10 +296,10 @@ LVal *builtin_op(LEnv *lenv, LVal *lval, char *op);
  * @brief  Associate a builtin and its symbol in a LEnv
  * @param  *lenv: The LEnv where the builtin is to be stored
  * @param  *sym: The symbol name of the builtin
- * @param  fun: The lbuilitin to be associated with sym
+ * @param  lbuiltin: The lbuilitin to be associated with sym
  * @retval None
  */
-void lenv_add_builtin(LEnv *lenv, char *sym, LBuiltin fun);
+void lenv_add_builtin(LEnv *lenv, char *sym, LBuiltin lbuiltin);
 
 /**
  * @brief  Add default builtins to LEnv
@@ -376,10 +377,10 @@ LVal *lval_wrap_expr(int type) {
 LVal *lval_wrap_sexpr(void) { return lval_wrap_expr(LVAL_SEXPR); }
 LVal *lval_wrap_qexpr(void) { return lval_wrap_expr(LVAL_QEXPR); }
 
-LVal *lval_wrap_fun(LBuiltin fun) {
+LVal *lval_wrap_lbuiltin(LBuiltin lbuiltin) {
     LVal *lfun = malloc(sizeof(LVal));
     lfun->type = LVAL_FUN;
-    lfun->fun = fun;
+    lfun->lbuiltin = lbuiltin;
     return lfun;
 }
 
@@ -417,7 +418,7 @@ LVal *lval_copy(LVal *lval) {
             copy->num = lval->num;
             break;
         case LVAL_FUN:
-            copy->fun = lval->fun;
+            copy->lbuiltin = lval->lbuiltin;
             break;
         case LVAL_SYM:
             copy->sym = malloc(strlen(lval->sym) + 1);
@@ -698,7 +699,7 @@ LVal *lval_eval_sexpr(LEnv *lenv, LVal *lval) {
     }
 
     // Invoke the LBuiltin
-    LVal *result = first->fun(lenv, lval);
+    LVal *result = first->lbuiltin(lenv, lval);
 
     // Delete the first child
     lval_del(first);
@@ -906,9 +907,9 @@ LVal *builtin_def(LEnv *lenv, LVal *lval) {
     return lval_wrap_sexpr();
 }
 
-void lenv_add_builtin(LEnv *lenv, char *sym, LBuiltin fun) {
+void lenv_add_builtin(LEnv *lenv, char *sym, LBuiltin lbuiltin) {
     LVal *lsym = lval_wrap_sym(sym);
-    LVal *lfun = lval_wrap_fun(fun);
+    LVal *lfun = lval_wrap_lbuiltin(lbuiltin);
 
     lenv_put(lenv, lsym, lfun);
     lval_del(lsym);

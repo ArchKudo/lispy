@@ -206,3 +206,8 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Add modulo to list of symbols
 - Still a bit hazy how `LBuiltin`'s work as a whole..
 - Release lispy v0.0.7!
+
+### Commit 27
+
+- Modify `LVal` struct to have additional fields related to `LBuiltin`'s
+- s/`fun`/`lbuiltin`
