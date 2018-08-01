@@ -211,3 +211,10 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 
 - Modify `LVal` struct to have additional fields related to `LBuiltin`'s
 - s/`fun`/`lbuiltin`
+
+### Commit 28
+
+- Added wrapper function for lambda expressions
+- Fixed a typo
+- Add cases for `LVAL_FUN` to handle builtins and user-defined lambda expressions
+- Code does not compile due to `lenv_copy` not defined

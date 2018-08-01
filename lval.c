@@ -93,6 +93,15 @@ LVal *lval_wrap_lbuiltin(LBuiltin lbuiltin);
 /* LVal methods for modification and evaluation */
 
 /**
+ * @brief  Wrap as a lambda expression (local functions)
+ * @note   // To-do: Correct explanation for @param
+ * @param  *lformals: The formal part of the lambda expression
+ * @param  *lbody: The body of the lambda expression
+ * @retval A LVal with type LVAL_FUN with lbuiltin field set to NULL
+ */
+LVal *lval_wrap_lambda(LVal *lformals, LVal *lbody);
+
+/**
  * @brief  Delete a LVal
  * @param  *lval: The LVal which need to be freed along with its contents
  * @retval None
@@ -296,7 +305,7 @@ LVal *builtin_op(LEnv *lenv, LVal *lval, char *op);
  * @brief  Associate a builtin and its symbol in a LEnv
  * @param  *lenv: The LEnv where the builtin is to be stored
  * @param  *sym: The symbol name of the builtin
- * @param  lbuiltin: The lbuilitin to be associated with sym
+ * @param  lbuiltin: The lbuiltin to be associated with sym
  * @retval None
  */
 void lenv_add_builtin(LEnv *lenv, char *sym, LBuiltin lbuiltin);
@@ -384,6 +393,23 @@ LVal *lval_wrap_lbuiltin(LBuiltin lbuiltin) {
     return lfun;
 }
 
+LVal *lval_wrap_lambda(LVal *lformals, LVal *lbody) {
+    LVal *llambda = malloc(sizeof(LVal));
+    llambda->type = LVAL_FUN;
+
+    // User function so builtin is NULL
+    llambda->lbuiltin = NULL;
+
+    // Also provide an environment
+    llambda->lenv = lenv_new();
+
+    // Set fields
+    llambda->lformals = lformals;
+    llambda->lbody = lbody;
+
+    return llambda;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 /* Functions to operate on LVal struct */
 ///////////////////////////////////////////////////////////////////////////////
@@ -392,6 +418,11 @@ void lval_del(LVal *lval) {
     switch (lval->type) {
         case LVAL_NUM:
         case LVAL_FUN:
+            if (!(lval->lbuiltin)) {
+                lenv_del(lval->lenv);
+                lval_del(lval->lformals);
+                lval_del(lval->lbody);
+            }
             break;
         case LVAL_ERR:
             free(lval->err);
@@ -418,7 +449,14 @@ LVal *lval_copy(LVal *lval) {
             copy->num = lval->num;
             break;
         case LVAL_FUN:
-            copy->lbuiltin = lval->lbuiltin;
+            if (lval->lbuiltin) {
+                copy->lbuiltin = lval->lbuiltin;
+            } else {
+                copy->lbuiltin = NULL;
+                copy->lenv = lenv_copy(lval->lenv);
+                copy->lformals = lval_copy(lval->lformals);
+                copy->lbody = lval_copy(lval->lbody);
+            }
             break;
         case LVAL_SYM:
             copy->sym = malloc(strlen(lval->sym) + 1);
@@ -599,7 +637,15 @@ void lval_print(LVal *lval) {
             printf("%ld", lval->num);
             break;
         case LVAL_FUN:
-            printf("<function>");
+            if (lval->lbuiltin) {
+                printf("<builtin>");
+            } else {
+                printf("(\\ ");
+                lval_print(lval->lformals);
+                printf(" ");
+                lval_print(lval->lbody);
+                printf(")");
+            }
             break;
         case LVAL_ERR:
             printf("Error: %s", lval->err);
