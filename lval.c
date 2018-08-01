@@ -302,6 +302,14 @@ LVal *builtin_join(LEnv *lenv, LVal *lval);
 LVal *builtin_op(LEnv *lenv, LVal *lval, char *op);
 
 /**
+ * @brief  Builtins for lambda expressions
+ * @param  *lenv: The default LEnv
+ * @param  *lval: LVal having two child QEXPR for lformals and lbody
+ * @retval A LVal of type LVAL_FUN wrapped using lval_wrap_lambda
+ */
+LVal *builtin_lambda(LEnv *lenv, LVal *lval);
+
+/**
  * @brief  Associate a builtin and its symbol in a LEnv
  * @param  *lenv: The LEnv where the builtin is to be stored
  * @param  *sym: The symbol name of the builtin
@@ -953,6 +961,30 @@ LVal *builtin_def(LEnv *lenv, LVal *lval) {
     return lval_wrap_sexpr();
 }
 
+LVal *builtin_lambda(LEnv *lenv, LVal *lval) {
+    // Ensure both lformals and lbody are present
+    LASSERT_CHILD_COUNT("\\", lval, 2);
+
+    // Assert both children are QEXPR
+    LASSERT_CHILD_TYPE("\\", lval, 0, LVAL_QEXPR);
+    LASSERT_CHILD_TYPE("\\", lval, 1, LVAL_QEXPR);
+
+    // Check if first child(lformals) contains only symbols
+    for (int i = 0; i < lval->children[0]->child_count; i++) {
+        LASSERT(lval, (lval->children[0]->children[i]->type == LVAL_SYM),
+                "Formals can only contain symbols!\n"
+                "Got %s, Expected %s",
+                lval_print_type(lval->children[0]->children[i]->type),
+                lval_print_type(LVAL_SYM));
+    }
+
+    LVal *lformals = lval_pop(lval, 0);
+    LVal *lbody = lval_pop(lval, 0);
+
+    lval_del(lval);
+
+    return lval_wrap_lambda(lformals, lbody);
+}
 void lenv_add_builtin(LEnv *lenv, char *sym, LBuiltin lbuiltin) {
     LVal *lsym = lval_wrap_sym(sym);
     LVal *lfun = lval_wrap_lbuiltin(lbuiltin);
@@ -969,6 +1001,7 @@ void lenv_init_builtins(LEnv *lenv) {
     lenv_add_builtin(lenv, "tail", builtin_tail);
     lenv_add_builtin(lenv, "eval", builtin_eval);
     lenv_add_builtin(lenv, "join", builtin_join);
+    lenv_add_builtin(lenv, "\\", builtin_lambda);
 
     lenv_add_builtin(lenv, "+", builtin_add);
 

@@ -218,3 +218,9 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Fixed a typo
 - Add cases for `LVAL_FUN` to handle builtins and user-defined lambda expressions
 - Code does not compile due to `lenv_copy` not defined
+
+### Commit 29
+
+- Builtin for lambda expressions
+- Added builtin to `lenv_add_builtin`
+- Still does not compile, due to previous error.
