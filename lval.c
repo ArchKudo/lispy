@@ -175,6 +175,22 @@ LVal *lenv_get(LEnv *hay, LVal *pin);
 void lenv_put(LEnv *lenv, LVal *lsym, LVal *lval);
 
 /**
+ * @brief  Copy a LEnv
+ * @param  *lenv: The LEnv to be copied
+ * @retval The copied LEnv
+ */
+LEnv *lenv_copy(LEnv *lenv);
+
+/**
+ * @brief  Put a symbol inside a global environment
+ * @param  *lenv: Immediate LEnv environment
+ * @param  *lsym: The symbol used to represent lval, of type LVAL_SYM
+ * @param  *lval: The value of the symbol
+ * @retval None
+ */
+void lenv_put_global(LEnv *lenv, LVal *lsym, LVal *lval);
+
+/**
  * @brief  Evaluate an LVal
  * @note   Fetches symbols from LEnv, Handles SEXPR, or just returns LVal
  * @param  *lenv: LEnv from which the symbols must be fetched
@@ -540,9 +556,10 @@ LVal *lval_take(LVal *lval, int index) {
 
 LEnv *lenv_new(void) {
     LEnv *lenv = malloc(sizeof(LEnv));
-    lenv->child_count = 0;
+    lenv->parent = NULL;
     lenv->lvals = NULL;
     lenv->syms = NULL;
+    lenv->child_count = 0;
 
     return lenv;
 }
@@ -559,10 +576,16 @@ void lenv_del(LEnv *lenv) {
 }
 
 LVal *lenv_get(LEnv *hay, LVal *pin) {
+    // Check in local environment
     for (int i = 0; i < hay->child_count; i++) {
         if (strcmp(hay->syms[i], pin->sym) == 0) {
             return lval_copy(hay->lvals[i]);
         }
+    }
+
+    // If not found, check in parent environment
+    if (hay->parent) {
+        return lenv_get(hay->parent, pin);
     }
 
     return lval_wrap_err("Unbound symbol: '%s'", pin->sym);
@@ -596,6 +619,28 @@ void lenv_put(LEnv *lenv, LVal *lsym, LVal *lval) {
     lenv->lvals[lenv->child_count - 1] = lval_copy(lval);
 }
 
+LEnv *lenv_copy(LEnv *lenv) {
+    LEnv *copy = malloc(sizeof(LEnv));
+    copy->parent = lenv->parent;
+    copy->child_count = lenv->child_count;
+    copy->lvals = malloc(sizeof(LVal) * copy->child_count);
+    copy->syms = malloc(sizeof(char *) * copy->child_count);
+
+    for (int i = 0; i < copy->child_count; i++) {
+        copy->syms[i] = malloc(strlen(lenv->syms[i]) + 1);
+        strcpy(copy->syms[i], lenv->syms[i]);
+        copy->lvals[i] = lval_copy(lenv->lvals[i]);
+    }
+
+    return copy;
+}
+
+void lenv_put_global(LEnv *lenv, LVal *lsym, LVal *lval) {
+    while (lenv->parent) {
+        lenv = lenv->parent;
+    }
+    lenv_put(lenv, lsym, lval);
+}
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -962,6 +1007,7 @@ LVal *builtin_def(LEnv *lenv, LVal *lval) {
 }
 
 LVal *builtin_lambda(LEnv *lenv, LVal *lval) {
+    (void)lenv;
     // Ensure both lformals and lbody are present
     LASSERT_CHILD_COUNT("\\", lval, 2);
 
@@ -985,6 +1031,7 @@ LVal *builtin_lambda(LEnv *lenv, LVal *lval) {
 
     return lval_wrap_lambda(lformals, lbody);
 }
+
 void lenv_add_builtin(LEnv *lenv, char *sym, LBuiltin lbuiltin) {
     LVal *lsym = lval_wrap_sym(sym);
     LVal *lfun = lval_wrap_lbuiltin(lbuiltin);

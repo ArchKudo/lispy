@@ -45,6 +45,9 @@ struct LVal {
  * @note   // Todo
  */
 struct LEnv {
+    /* Points to the parent environment */
+    LEnv *parent;
+
     char **syms;
     LVal **lvals;
     int child_count;

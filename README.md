@@ -216,7 +216,7 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 
 - Added wrapper function for lambda expressions
 - Fixed a typo
-- Add cases for `LVAL_FUN` to handle builtins and user-defined lambda expressions
+- Added cases for `LVAL_FUN` to handle builtins and user-defined lambda expressions
 - Code does not compile due to `lenv_copy` not defined
 
 ### Commit 29
@@ -224,3 +224,13 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Builtin for lambda expressions
 - Added builtin to `lenv_add_builtin`
 - Still does not compile, due to previous error.
+
+### Commit 30
+
+- Added field `parent` inside `LEnv` struct
+- Updated `lenv_new` to also intialize `parent`
+- Updated `lenv_get` to check for local and global environment for variables
+- Implemented `lenv_copy` to copy environments
+- Implemented `lenv_put_global` to add variable directly to parent environment rather than local.
+- Typecast `lenv` to `void` in `builtin_lambda`
+- Won't compile (hopefully) due to unimplemented builtins..
