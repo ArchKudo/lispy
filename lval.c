@@ -6,6 +6,10 @@
 #define MAX_ERR 4096
 
 // TODO: Add shorter error descriptions
+// TODO: Prototype remaining builtins
+// TODO: Refactor some fields and variable names
+// TODO: Fix some descriptions of parameters in comments
+// TODO: Split source file to multiple modular files
 
 // Assert condition `cond` if not throw error and delete LVal `lval`
 #define LASSERT(lval, cond, fmt, ...)                                \
@@ -324,6 +328,23 @@ LVal *builtin_op(LEnv *lenv, LVal *lval, char *op);
  * @retval A LVal of type LVAL_FUN wrapped using lval_wrap_lambda
  */
 LVal *builtin_lambda(LEnv *lenv, LVal *lval);
+
+/**
+ * @brief  Builtin for creating local, global functions
+ * @note   Used by builtin_def, builtin_put
+ * @param  *lenv: The LEnv to be operated on
+ * @param  *lval: A LVal containing QEXPR for symbols(paramters) and, their
+ * values
+ * @param  *fun: Name of builtin, either "def" or "="
+ * @retval Evaluated LVal
+ */
+LVal *builtin_var(LEnv *lenv, LVal *lval, char *fun);
+
+/* A wrapper to builtin_var for global definitions */
+LVal *builtin_def(LEnv *lenv, LVal *lval);
+
+/* A wrapper to builtin_var for local definitions */
+LVal *builtin_put(LEnv *lenv, LVal *lval);
 
 /**
  * @brief  Associate a builtin and its symbol in a LEnv
@@ -978,28 +999,33 @@ LVal *builtin_mod(LEnv *lenv, LVal *lval) {
     return builtin_op(lenv, lval, "%");
 }
 
-LVal *builtin_def(LEnv *lenv, LVal *lval) {
+LVal *builtin_var(LEnv *lenv, LVal *lval, char *fun) {
     // Syntax is of the form:
-    //`def {sym1, sym2, ...} val1, val2, ...`
+    //`fun {sym1, sym2, ...} val1, val2, ...`
     //     ^- Child 0        ^- Child 1  ^- Child N
 
     // Check whether Child 0 is a QEXPR
-    LASSERT_CHILD_TYPE("def", lval, 0, LVAL_QEXPR);
+    LASSERT_CHILD_TYPE(fun, lval, 0, LVAL_QEXPR);
 
     // Get the symbol list(QEXPR)
     LVal *var_list = lval->children[0];
 
     // Assert all var_list members are symbols
     for (int i = 0; i < var_list->child_count; i++) {
-        LASSERT_CHILD_TYPE("def", var_list, i, LVAL_SYM);
+        LASSERT_CHILD_TYPE(fun, var_list, i, LVAL_SYM);
     }
 
     // Assert there are enough values for all symbols in var list
-    LASSERT_CHILD_COUNT("def", var_list, lval->child_count - 1);
+    LASSERT_CHILD_COUNT(fun, var_list, lval->child_count - 1);
 
     for (int i = 0; i < var_list->child_count; i++) {
-        // Put variable symbols and their values in the env
-        lenv_put(lenv, var_list->children[i], lval->children[i + 1]);
+        // If fun is "def" put in global scope i.e parent environment
+        if (strcmp(fun, "def") == 0) {
+            lenv_put_global(lenv, var_list->children[i], lval->children[i + 1]);
+        } else if (strcmp(fun, "=") == 0) {  // Else in local environment
+            // Put variable symbols and their values in the env
+            lenv_put(lenv, var_list->children[i], lval->children[i + 1]);
+        }
     }
 
     lval_del(lval);
@@ -1032,6 +1058,14 @@ LVal *builtin_lambda(LEnv *lenv, LVal *lval) {
     return lval_wrap_lambda(lformals, lbody);
 }
 
+LVal *builtin_def(LEnv *lenv, LVal *lval) {
+    return builtin_var(lenv, lval, "def");
+}
+
+LVal *builtin_put(LEnv *lenv, LVal *lval) {
+    return builtin_var(lenv, lval, "=");
+}
+
 void lenv_add_builtin(LEnv *lenv, char *sym, LBuiltin lbuiltin) {
     LVal *lsym = lval_wrap_sym(sym);
     LVal *lfun = lval_wrap_lbuiltin(lbuiltin);
@@ -1056,6 +1090,7 @@ void lenv_init_builtins(LEnv *lenv) {
     lenv_add_builtin(lenv, "*", builtin_mul);
     lenv_add_builtin(lenv, "/", builtin_div);
     lenv_add_builtin(lenv, "%", builtin_mod);
+    lenv_add_builtin(lenv, "=", builtin_put);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

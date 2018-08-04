@@ -233,4 +233,8 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Implemented `lenv_copy` to copy environments
 - Implemented `lenv_put_global` to add variable directly to parent environment rather than local.
 - Typecast `lenv` to `void` in `builtin_lambda`
-- Won't compile (hopefully) due to unimplemented builtins..
+- ~Won't compile~ Segfaults (hopefully) due to unimplemented builtins..
+
+### Commit 31
+
+- Modified `builtin_def` to `builtin_var` for handling cases of different environment
