@@ -12,6 +12,13 @@ typedef struct LEnv LEnv;
 /* LVal Types */
 enum { LVAL_NUM, LVAL_ERR, LVAL_SYM, LVAL_SEXPR, LVAL_QEXPR, LVAL_FUN };
 
+/**
+ * @brief  A function pointer for LBuiltins
+ * @note   LBuiltins are lispy's native functions
+ * @param  LEnv *: A LEnv to hold environment variables
+ * @param  LVal *: A list of LVals to operate on
+ * @retval Evaluation as a LVal
+ */
 typedef LVal *(*LBuiltin)(LEnv *, LVal *);
 
 /**
@@ -24,7 +31,6 @@ struct LVal {
 
     /* Value */
     long num;
-
     char *err;
     char *sym;
 
@@ -34,27 +40,29 @@ struct LVal {
     LVal *lformals;
     LVal *lbody;
 
-    /* Expressions */
+    /* Child Expressions */
     struct LVal **children;
     int child_count;
 };
 
 /**
- * @brief  A struct to store environment symbols and corresponding LVals as
- * arrays
- * @note   // Todo
+ * @brief  A struct to store variables with their (l)values
+ * @note   LEnv maybe local to function or the parent environment
  */
 struct LEnv {
     /* Points to the parent environment */
     LEnv *parent;
 
+    /* List of symbols in the environment */
     char **syms;
+    /* And their corresponding LVals */
     LVal **lvals;
+
     int child_count;
 };
 
 /**
- * @brief Print value of LVal adding a new line at the end
+ * @brief Print the value of a LVal, adding a new line at the end
  * @param  val: An LVal
  * @retval None
  */

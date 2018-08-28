@@ -196,7 +196,6 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
   - Like dumps core on passing wrong number of arguments to `def`
   - Reachable blocks are still present even after moving from readline to libedit
 
-
 ### Commit 26
 
 - Turns out: >   - Like dumps core on passing wrong number of arguments to `def`
@@ -238,3 +237,15 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 ### Commit 31
 
 - Modified `builtin_def` to `builtin_var` for handling cases of different environment
+
+### Commit 32
+
+- Updated macro comments
+- Seperate cases for `LVAL_NUM` and `LVAL_FUN` in `lval_del`
+- Fix bug in `lval_copy`
+- Implement `lval_call`
+- Invoke `lval_call` instead of `lbuiltin` in `lval_eval_sexpr`
+- Fixed whitespace
+- Added/Modified comments
+- Replace `lval_wrap_str` with `lval_wrap_sym`
+- Removed stupid allocation bug in `lval_copy`! Code runs!

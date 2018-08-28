@@ -8,19 +8,21 @@
 // TODO: Add shorter error descriptions
 // TODO: Prototype remaining builtins
 // TODO: Refactor some fields and variable names
+// TODO: Refactor consistent usage of lsym, lvar, ...
 // TODO: Fix some descriptions of parameters in comments
 // TODO: Split source file to multiple modular files
 
-// Assert condition `cond` if not throw error and delete LVal `lval`
-#define LASSERT(lval, cond, fmt, ...)                                \
-    if (!(cond)) {                                                   \
-        lval_del(lval);                                              \
-        /* __VA_ARGS__ allows to variable number of arguments */     \
-        /* ## in front eats "," on expansion if __VA_ARGS is empty*/ \
-        return lval_wrap_err(fmt, ##__VA_ARGS__);                    \
+// Asserts condition `cond` is false, if not throws an error and deletes `lval`
+#define LASSERT(lval, cond, fmt, ...)                                 \
+    if (!(cond)) {                                                    \
+        lval_del(lval);                                               \
+        /* __VA_ARGS__ allows to variable number of arguments */      \
+        /* ## in front eats "," on expansion if __VA_ARGS is empty */ \
+        return lval_wrap_err(fmt, ##__VA_ARGS__);                     \
     }
 
-// Assert if child at ith index has type same as expected else, throw error
+// Asserts if child of `lval` at given index has the same type as `expected` or
+// else, throw error
 #define LASSERT_CHILD_TYPE(lbuiltin, lval, index, expected)                \
     LASSERT(lval, lval->children[index]->type == expected,                 \
             "Function '%s' was passed incorrect type of argument for "     \
@@ -29,14 +31,14 @@
             lbuiltin, index, lval_print_type(lval->children[index]->type), \
             lval_print_type(expected))
 
-// Assert if correct number of arguments are passed, by counting children
+// Asserts if correct number of arguments were passed, i.e by counting children
 #define LASSERT_CHILD_COUNT(lbuiltin, lval, count)                     \
     LASSERT(lval, lval->child_count == count,                          \
             "Function '%s' was passed incorrect number of arguments\n" \
             "Got %i, expected %i",                                     \
             lbuiltin, lval->child_count, count)
 
-// Assert if function lbuiltin was passed with no arguments
+// Asserts if function `lbuiltin` was passed with no arguments
 #define LASSERT_CHILD_NOT_EMPTY(lbuiltin, lval, index)                         \
     LASSERT(lval, lval->children[index]->child_count != 0,                     \
             "Functions '%s' was passed {} for argument at index %i", lbuiltin, \
@@ -56,14 +58,10 @@
 LVal *lval_wrap_long(long val);
 
 /**
- * @brief  Wrap strings as LVal's
- * @param  type: Type of LVal (from enum)
+ * @brief  Wrap a char string as a LVal symbol
  * @param  *str: String to wrap
- * @retval A LVal of type: `type`
+ * @retval A LVal of type LVAL_SYM
  */
-LVal *lval_wrap_str(int type, char *str);
-
-// lval_wrap_str with type LVAL_SYM
 LVal *lval_wrap_sym(char *sym);
 
 /**
@@ -105,6 +103,8 @@ LVal *lval_wrap_lbuiltin(LBuiltin lbuiltin);
  */
 LVal *lval_wrap_lambda(LVal *lformals, LVal *lbody);
 
+/* Functions to operate on LVal */
+
 /**
  * @brief  Delete a LVal
  * @param  *lval: The LVal which need to be freed along with its contents
@@ -143,6 +143,23 @@ LVal *lval_pop(LVal *lval, int index);
  * @retval Child at ith position
  */
 LVal *lval_take(LVal *lval, int index);
+
+/**
+ * @brief  Evaluate an LVal
+ * @note   Fetches symbols from LEnv, Handles SEXPR, or just returns LVal
+ * @param  *lenv: LEnv from which the symbols must be fetched
+ * @param  *lval: A LVal of any type
+ * @retval A LVal computed depending on type (@see @note)
+ */
+LVal *lval_eval(LEnv *lenv, LVal *lval);
+
+/**
+ * @brief  Evaluate a S-Expression
+ * @param  *lenv: A LEnv which contains symbol list
+ * @param  *lval: A LVal of type LVAL_SEXPR
+ * @retval Result wrapped as a LVal
+ */
+LVal *lval_eval_sexpr(LEnv *lenv, LVal *lval);
 
 /* LEnv Functions */
 
@@ -193,23 +210,6 @@ LEnv *lenv_copy(LEnv *lenv);
  * @retval None
  */
 void lenv_put_global(LEnv *lenv, LVal *lsym, LVal *lval);
-
-/**
- * @brief  Evaluate an LVal
- * @note   Fetches symbols from LEnv, Handles SEXPR, or just returns LVal
- * @param  *lenv: LEnv from which the symbols must be fetched
- * @param  *lval: A LVal of any type
- * @retval A LVal computed depending on type (@see @note)
- */
-LVal *lval_eval(LEnv *lenv, LVal *lval);
-
-/**
- * @brief  Evaluate a S-Expression
- * @param  *lenv: A LEnv which contains symbol list
- * @param  *lval: A LVal of type LVAL_SEXPR
- * @retval Result wrapped as a LVal
- */
-LVal *lval_eval_sexpr(LEnv *lenv, LVal *lval);
 
 /* MPC AST handlers */
 
@@ -373,23 +373,13 @@ LVal *lval_wrap_long(long num) {
     return lval;
 }
 
-LVal *lval_wrap_str(int type, char *str) {
-    LVal *lval = malloc(sizeof(LVal));
-    lval->type = type;
-    if (type == LVAL_ERR) {
-        // strlen return length excluding null byte terminator '\0'
-        // [len] + 1 ensures space for the null byte
-        lval->err = malloc(strlen(str) + 1);
-        // Copy str to lval->err including null byte
-        strcpy(lval->err, str);
-    } else if (type == LVAL_SYM) {
-        lval->sym = malloc(strlen(str) + 1);
-        strcpy(lval->sym, str);
-    }
-    return lval;
+LVal *lval_wrap_sym(char *sym) {
+    LVal *lsym = malloc(sizeof(LVal));
+    lsym->type = LVAL_SYM;
+    lsym->sym = malloc(strlen(sym) + 1);
+    strcpy(lsym->sym, sym);
+    return lsym;
 }
-
-LVal *lval_wrap_sym(char *sym) { return lval_wrap_str(LVAL_SYM, sym); }
 
 LVal *lval_wrap_err(char *fmt, ...) {
     LVal *lerr = malloc(sizeof(LVal));
@@ -442,13 +432,13 @@ LVal *lval_wrap_lambda(LVal *lformals, LVal *lbody) {
     LVal *llambda = malloc(sizeof(LVal));
     llambda->type = LVAL_FUN;
 
-    // User function so builtin is NULL
+    // lambdas are user functions so, lbuiltin field is set to NULL
     llambda->lbuiltin = NULL;
 
-    // Also provide an environment
+    // Also provide a new local environment
     llambda->lenv = lenv_new();
 
-    // Set fields
+    // Set formals(parameter list) and the body of lambda
     llambda->lformals = lformals;
     llambda->lbody = lbody;
 
@@ -462,6 +452,7 @@ LVal *lval_wrap_lambda(LVal *lformals, LVal *lbody) {
 void lval_del(LVal *lval) {
     switch (lval->type) {
         case LVAL_NUM:
+            break;
         case LVAL_FUN:
             if (!(lval->lbuiltin)) {
                 lenv_del(lval->lenv);
@@ -514,14 +505,16 @@ LVal *lval_copy(LVal *lval) {
         case LVAL_SEXPR:
         case LVAL_QEXPR:
             copy->child_count = lval->child_count;
+            copy->children = malloc(sizeof(LVal) * copy->child_count);
             for (int i = 0; i < copy->child_count; i++) {
-                copy->children[i] = lval->children[i];
+                copy->children[i] = lval_copy(lval->children[i]);
             }
             break;
     }
     return copy;
 }
 
+// Add a single child LVal to parent LVal
 LVal *lval_add(LVal *parent, LVal *child) {
     parent->child_count += 1;
     parent->children =
@@ -532,6 +525,7 @@ LVal *lval_add(LVal *parent, LVal *child) {
     return parent;
 }
 
+// Add addend's children to augend
 LVal *lval_join(LVal *augend, LVal *addend) {
     for (int i = 0; i < addend->child_count; i++) {
         augend = lval_add(augend, addend->children[i]);
@@ -544,7 +538,7 @@ LVal *lval_join(LVal *augend, LVal *addend) {
 LVal *lval_pop(LVal *lval, int index) {
     LVal *popped = lval->children[index];
 
-    // Overwrite the child at `index (to end)` with `index + 1 (to end)`
+    // Move memory one LVal to the left
     memmove(&lval->children[index],      // Destination
             &lval->children[index + 1],  // Source
             (size_t)(sizeof(LVal *) * (lval->child_count - index - 1))  // Size
@@ -560,6 +554,8 @@ LVal *lval_pop(LVal *lval, int index) {
     return popped;
 }
 
+// TODO: What is the point of doing a memmove if the LVal is going to be
+// deleted?
 LVal *lval_take(LVal *lval, int index) {
     // Pop LVal at the given index
     LVal *popped = lval_pop(lval, index);
@@ -569,6 +565,55 @@ LVal *lval_take(LVal *lval, int index) {
 
     // Return the popped value
     return popped;
+}
+
+LVal *lval_call(LEnv *lenv, LVal *lfun, LVal *largs) {
+    // Return the lbuiltin itself if a lbuiltin
+    if (lfun->lbuiltin) {
+        return lfun->lbuiltin(lenv, largs);
+    }
+
+    // Store original args count
+    int args = largs->child_count;
+    int params = lfun->lformals->child_count;
+
+    // Part I: Assignment of args to params
+    while (largs->child_count) {
+        // Handle when args are remaining even after parameters are exhausted
+        if (lfun->lformals->child_count == 0) {
+            lval_del(largs);
+            return lval_wrap_err(
+                "Function was passed too many arguments!"
+                "Got %s, Expected %s",
+                args, params);
+        }
+
+        // Get the first variable symbol
+        LVal *lsym = lval_pop(lfun->lformals, 0);
+
+        // Get the first variable's value
+        LVal *lsym_val = lval_pop(largs, 0);
+
+        // Puts the symbol and its value inside the environment
+        lenv_put(lfun->lenv, lsym, lsym_val);
+
+        lval_del(lsym);
+        lval_del(lsym_val);
+    }
+
+    // After exhausting all arguments delete `largs`
+    lval_del(largs);
+
+    // Part II: Evaluation
+    // If all formals are bound, evaluate
+    if (lfun->lformals->child_count == 0) {
+        lfun->lenv->parent = lenv;
+        return builtin_eval(
+            lfun->lenv, lval_add(lval_wrap_sexpr(), lval_copy(lfun->lbody)));
+    } else {
+        // Partial Evaluation
+        return lval_copy(lfun);
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -604,7 +649,7 @@ LVal *lenv_get(LEnv *hay, LVal *pin) {
         }
     }
 
-    // If not found, check in parent environment
+    // If not found, check in its parent environment
     if (hay->parent) {
         return lenv_get(hay->parent, pin);
     }
@@ -625,7 +670,6 @@ void lenv_put(LEnv *lenv, LVal *lsym, LVal *lval) {
     }
 
     // If symbol is not present
-
     // Increase child count
     lenv->child_count += 1;
 
@@ -818,8 +862,8 @@ LVal *lval_eval_sexpr(LEnv *lenv, LVal *lval) {
         return lerr;
     }
 
-    // Invoke the LBuiltin
-    LVal *result = first->lbuiltin(lenv, lval);
+    // Invoke function
+    LVal *result = lval_call(lenv, first, lval);
 
     // Delete the first child
     lval_del(first);
