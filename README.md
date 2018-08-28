@@ -4,14 +4,14 @@ Exercises and programs based on this [tutorial](http://www.buildyourownlisp.com)
 
 ## Changelog
 
-### Commit 1
+### Update 1
 
 Added program [prompt.c](./prompt.c)
 
 - Added a simple user prompt
 - Released lispy v0.0.1!
 
-### Commit 2
+### Update 2
 
 Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 
@@ -22,16 +22,16 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 - Update Makefile
 - Release lispy v0.0.2!
 
-### Commit 3
+### Update 3
 
 - Fixed typo
 - Define TRUE/FALSE in [prompt.c](./prompt.c)
 
-### Commit 4
+### Update 4
 
 - Added mpc as submodule
 
-### Commit 5
+### Update 5
 
 - Symlinked [mpc.h](./mpc.h) and [mpc.c](./mpc.c)
 - Solved some exercises of Chapter 06 at [exercises.md](./exercises.md)
@@ -40,44 +40,44 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 - Cleanup mpc parsers at exit
 - Released lispy v0.0.3!
 
-### Commit 6
+### Update 6
 
 - Added modulo(symbol `%`) in list of operators
 - Realized parsers doesn't handle bad input (eg: Bad number of operands)
 
-### Commit 7
+### Update 7
 
 - Added .clang-format
 - Formatted prompt.c
 
-### Commit 8
+### Update 8
 
 - Updated .clang-format
 - Added .gitignore
 - Initial support for evaluating expressions
 
-### Commit 9
+### Update 9
 
 - Added some comments
 - Renamed some functions
 - Refactor if-else
 
-### Commit 10
+### Update 10
 
 - Removed debug print statments
 - Released lispy v0.0.4!
 
-### Commit 11
+### Update 11
 
 - Removed unnecessary function to calculate total number of nodes
 
-### Commit 12
+### Update 12
 
 - Move evaluation of ast to seperate [header](./eval.h)
 - Add some documentation
 - Updated Makefile to include eval
 
-### Commit 13
+### Update 13
 
 Created [lval.h](./lval.h) and [lval.c](./lval.c)
 
@@ -89,7 +89,7 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Modified Makefile to include lval.c
 - Removed unnecessary includes from files
 
-### Commit 14
+### Update 14
 
 - Disabled evaluation for refactoring
 - Removed a lot of memory leaks present from Day 1
@@ -98,14 +98,14 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - A lot of dead code present
 - Program compiles and gives correct output
 
-### Commit 15
+### Update 15
 
 - Document public/private functions in lval.c
 - Evaluate expressions
 - Print result of expression rather than expression itself
 - Released lispy v0.0.5!
 
-### Commit 16
+### Update 16
 
 - Added support for Quoted(Q)-Expressions
   - In lang (`{}`)
@@ -116,17 +116,17 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Derived `sexpr` functions for use with `qexpr`
 - Added operator for `qexpr` like head, tail, etc.
 
-### Commit 17
+### Update 17
 
 - Updated prompt to display lispy version v0.0.5
 - Added documentation
 - Divided source file using comments
 
-### Commit 18
+### Update 18
 
 - Release lispy v0.0.6!
 
-### Commit 19
+### Update 19
 
 - Forward declare structs `LVal`, `LEnv` along with their `typedef`'s
 - Forward declare function pointer `LBuiltin`
@@ -139,7 +139,7 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Also added a newline character to exit message
 - Commit to make shorter discriptive commits!
 
-### Commit 20
+### Update 20
 
 - Define `LEnv` struct
 - Modify `lval_wrap_err` to parse variable arguments as error string
@@ -150,20 +150,20 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Commented some functions
 - More re-ordering and restructuring of files
 
-### Commit 21
+### Update 21
 
 - Declare and define functions to operate on `LEnv`'s
 - Finally have an idea of how `lenv_get` works
   - i.e the lval passed is itself a symbol instead of a value
 
-### Commit 22
+### Update 22
 
 - Updated `LASSERT` to be variadic
 - Added other assertions
 - Added some documentation on the macros
 - Breaks previous `LASSERT`'s
 
-### Commit 23
+### Update 23
 
 - Fix `LASSERT_NOT_EMPTY` to check for children of child of `LVal` instead, of child itself
 - Update various builtins signature to pass `LEnv`'s
@@ -179,14 +179,14 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Added modulo operator logic in `builtin_op` which to my suprise was missing!
 - Added methods to declare and intialize `builtin`'s inside `LEnv`'s
 
-### Commit 24
+### Update 24
 
 - Update signature and definition of `lval_eval*` to accept `LEnv` for getting symbols
 - Also updated their documentation
 - Improved error-handling in `lval_eval_sexpr`
 - Fixed `lval_eval` signature in `builtin_eval` (which should have been fixed already in earlier commits...)
 
-### Commit 25
+### Update 25
 
 - Update documentation for `lval_eval` from previous commit
 - Made some `LEnv` related functions public for prompt.c
@@ -196,7 +196,7 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
   - Like dumps core on passing wrong number of arguments to `def`
   - Reachable blocks are still present even after moving from readline to libedit
 
-### Commit 26
+### Update 26
 
 - Turns out: >   - Like dumps core on passing wrong number of arguments to `def`
   - Dumps core for every builtin
@@ -206,25 +206,25 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Still a bit hazy how `LBuiltin`'s work as a whole..
 - Release lispy v0.0.7!
 
-### Commit 27
+### Update 27
 
 - Modify `LVal` struct to have additional fields related to `LBuiltin`'s
 - s/`fun`/`lbuiltin`
 
-### Commit 28
+### Update 28
 
 - Added wrapper function for lambda expressions
 - Fixed a typo
 - Added cases for `LVAL_FUN` to handle builtins and user-defined lambda expressions
 - Code does not compile due to `lenv_copy` not defined
 
-### Commit 29
+### Update 29
 
 - Builtin for lambda expressions
 - Added builtin to `lenv_add_builtin`
 - Still does not compile, due to previous error.
 
-### Commit 30
+### Update 30
 
 - Added field `parent` inside `LEnv` struct
 - Updated `lenv_new` to also intialize `parent`
@@ -234,11 +234,11 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Typecast `lenv` to `void` in `builtin_lambda`
 - ~Won't compile~ Segfaults (hopefully) due to unimplemented builtins..
 
-### Commit 31
+### Update 31
 
 - Modified `builtin_def` to `builtin_var` for handling cases of different environment
 
-### Commit 32
+### Update 32
 
 - Updated macro comments
 - Seperate cases for `LVAL_NUM` and `LVAL_FUN` in `lval_del`
@@ -249,3 +249,10 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Added/Modified comments
 - Replace `lval_wrap_str` with `lval_wrap_sym`
 - Removed stupid allocation bug in `lval_copy`! Code runs!
+
+### Update 33
+
+- Replaced Commit messages in this readme with updates..
+- Changed `first` to `lfun` in `lval_eval_sexpr` which I find more fitting..
+- Grouped builtins in `lenv_init_builtins`
+- Removed unnecessary level of indentation inside quotes

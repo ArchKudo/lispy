@@ -18,13 +18,13 @@ int main() {
     // Define the above parsers with patterns + regex
     const char *lang =
         " \
-                num: /-?[0-9]+/ ; \
-                sym: /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%]+/ ; \
-                sexpr: '(' <expr>* ')' ; \
-                qexpr: '{' <expr>* '}' ; \
-                expr: <num> | <sym> | <sexpr> | <qexpr> ; \
-                lisp: /^/ <expr>* /$/ ; \
-            ";
+        num: /-?[0-9]+/ ; \
+        sym: /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%]+/ ; \
+        sexpr: '(' <expr>* ')' ; \
+        qexpr: '{' <expr>* '}' ; \
+        expr: <num> | <sym> | <sexpr> | <qexpr> ; \
+        lisp: /^/ <expr>* /$/ ; \
+    ";
     mpca_lang(MPCA_LANG_DEFAULT, lang, Number, Symbol, SExpression, QExpression,
               Expression, Notation);
 

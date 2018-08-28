@@ -826,6 +826,7 @@ char *lval_print_type(int type) {
 ///////////////////////////////////////////////////////////////////////////////
 
 LVal *lval_eval_sexpr(LEnv *lenv, LVal *lval) {
+    // Start evaluation from the inner-most child
     for (int i = 0; i < lval->child_count; i++) {
         lval->children[i] = lval_eval(lenv, lval->children[i]);
     }
@@ -848,25 +849,25 @@ LVal *lval_eval_sexpr(LEnv *lenv, LVal *lval) {
     }
 
     // Get the first child
-    LVal *first = lval_pop(lval, 0);
+    LVal *lfun = lval_pop(lval, 0);
 
-    // Raise error if first child isn't a builtin
+    // Raise error if first child is not a function
     // Also free first child and `lval`
-    if (first->type != LVAL_FUN) {
+    if (lfun->type != LVAL_FUN) {
         LVal *lerr = lval_wrap_err(
             "S-Expression starts with incorrect type!\n"
             "Got %s, Expected %s",
-            lval_print_type(first->type), lval_print_type(LVAL_FUN));
-        lval_del(first);
+            lval_print_type(lfun->type), lval_print_type(LVAL_FUN));
+        lval_del(lfun);
         lval_del(lval);
         return lerr;
     }
 
     // Invoke function
-    LVal *result = lval_call(lenv, first, lval);
+    LVal *result = lval_call(lenv, lfun, lval);
 
     // Delete the first child
-    lval_del(first);
+    lval_del(lfun);
 
     return result;
 }
@@ -1120,16 +1121,16 @@ void lenv_add_builtin(LEnv *lenv, char *sym, LBuiltin lbuiltin) {
 }
 
 void lenv_init_builtins(LEnv *lenv) {
-    lenv_add_builtin(lenv, "def", builtin_def);
     lenv_add_builtin(lenv, "list", builtin_list);
     lenv_add_builtin(lenv, "head", builtin_head);
     lenv_add_builtin(lenv, "tail", builtin_tail);
     lenv_add_builtin(lenv, "eval", builtin_eval);
     lenv_add_builtin(lenv, "join", builtin_join);
+
     lenv_add_builtin(lenv, "\\", builtin_lambda);
+    lenv_add_builtin(lenv, "def", builtin_def);
 
     lenv_add_builtin(lenv, "+", builtin_add);
-
     lenv_add_builtin(lenv, "-", builtin_sub);
     lenv_add_builtin(lenv, "*", builtin_mul);
     lenv_add_builtin(lenv, "/", builtin_div);
