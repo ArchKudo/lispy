@@ -256,3 +256,9 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Changed `first` to `lfun` in `lval_eval_sexpr` which I find more fitting..
 - Grouped builtins in `lenv_init_builtins`
 - Removed unnecessary level of indentation inside quotes
+
+### Update 34
+
+- Added code to handle variable number of arguments
+- Fixed some comments/variables
+- Realized `builtin_sub` is broken!

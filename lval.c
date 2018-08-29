@@ -573,9 +573,9 @@ LVal *lval_call(LEnv *lenv, LVal *lfun, LVal *largs) {
         return lfun->lbuiltin(lenv, largs);
     }
 
-    // Store original args count
-    int args = largs->child_count;
-    int params = lfun->lformals->child_count;
+    // Store original args/params count
+    int nargs = largs->child_count;
+    int nparams = lfun->lformals->child_count;
 
     // Part I: Assignment of args to params
     while (largs->child_count) {
@@ -584,12 +584,32 @@ LVal *lval_call(LEnv *lenv, LVal *lfun, LVal *largs) {
             lval_del(largs);
             return lval_wrap_err(
                 "Function was passed too many arguments!"
-                "Got %s, Expected %s",
-                args, params);
+                "Got %i, Expected %i",
+                nargs, nparams);
         }
 
         // Get the first variable symbol
         LVal *lsym = lval_pop(lfun->lformals, 0);
+
+        // Handle variable arguments
+        if (strcmp(lsym->sym, "&") == 0) {
+            if (lfun->lformals->child_count != 1) {
+                lval_del(largs);
+                return lval_wrap_err(
+                    "Function format invalid!\n"
+                    "'&' not followed by a single symbol!");
+            }
+
+            // Get the next symbol
+            LVal *lsym_next = lval_pop(lfun->lformals, 0);
+
+            // Assign the next symbol the remaining args as qexpr
+            lenv_put(lfun->lenv, lsym_next, builtin_list(lenv, largs));
+
+            lval_del(lsym);
+            lval_del(lsym_next);
+            break;
+        }
 
         // Get the first variable's value
         LVal *lsym_val = lval_pop(largs, 0);
@@ -605,6 +625,25 @@ LVal *lval_call(LEnv *lenv, LVal *lfun, LVal *largs) {
     lval_del(largs);
 
     // Part II: Evaluation
+
+    if (lfun->lformals->child_count > 0 &&
+        strcmp(lfun->lformals->children[0]->sym, "&") == 0) {
+        if (lfun->lformals->child_count != 2) {
+            return lval_wrap_err(
+                "Function format invalid!\n"
+                "'&' not followed by a single symbol!");
+        }
+
+        lval_del(lval_pop(lfun->lformals, 0));
+
+        LVal *lsym_next = lval_pop(lfun->lformals, 0);
+        LVal *lsym_val = lval_wrap_qexpr();
+
+        lenv_put(lfun->lenv, lsym_next, lsym_val);
+
+        lval_del(lsym_next);
+        lval_del(lsym_val);
+    }
     // If all formals are bound, evaluate
     if (lfun->lformals->child_count == 0) {
         lfun->lenv->parent = lenv;
