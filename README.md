@@ -20,7 +20,7 @@ Updated [prompt.c](./prompt.c) and [Makefile](./Makefile)
 - No limit on size of input
 - Linked readline library
 - Update Makefile
-- Release lispy v0.0.2!
+- Released lispy v0.0.2!
 
 ### Update 3
 
@@ -124,7 +124,7 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 
 ### Update 18
 
-- Release lispy v0.0.6!
+- Released lispy v0.0.6!
 
 ### Update 19
 
@@ -204,7 +204,7 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Fixed some error string formatting
 - Add modulo to list of symbols
 - Still a bit hazy how `LBuiltin`'s work as a whole..
-- Release lispy v0.0.7!
+- Released lispy v0.0.7!
 
 ### Update 27
 
@@ -262,3 +262,8 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Added code to handle variable number of arguments
 - Fixed some comments/variables
 - Realized `builtin_sub` is broken!
+
+### Update 35
+
+- Added some comments
+- Released lispy v0.0.8!

@@ -593,6 +593,7 @@ LVal *lval_call(LEnv *lenv, LVal *lfun, LVal *largs) {
 
         // Handle variable arguments
         if (strcmp(lsym->sym, "&") == 0) {
+            // Check there is only a single param(formal) following "&"
             if (lfun->lformals->child_count != 1) {
                 lval_del(largs);
                 return lval_wrap_err(
@@ -610,7 +611,7 @@ LVal *lval_call(LEnv *lenv, LVal *lfun, LVal *largs) {
             lval_del(lsym_next);
             break;
         }
-
+        // Else, without variable arguments
         // Get the first variable's value
         LVal *lsym_val = lval_pop(largs, 0);
 
@@ -628,6 +629,8 @@ LVal *lval_call(LEnv *lenv, LVal *lfun, LVal *largs) {
 
     if (lfun->lformals->child_count > 0 &&
         strcmp(lfun->lformals->children[0]->sym, "&") == 0) {
+        // Handle edge-case when `&` is not followed by a single argument,
+        // But wasn't caught by assignment due to absence of args
         if (lfun->lformals->child_count != 2) {
             return lval_wrap_err(
                 "Function format invalid!\n"
@@ -644,13 +647,13 @@ LVal *lval_call(LEnv *lenv, LVal *lfun, LVal *largs) {
         lval_del(lsym_next);
         lval_del(lsym_val);
     }
-    // If all formals are bound, evaluate
+    // If all params(formals) are bound, evaluate
     if (lfun->lformals->child_count == 0) {
         lfun->lenv->parent = lenv;
         return builtin_eval(
             lfun->lenv, lval_add(lval_wrap_sexpr(), lval_copy(lfun->lbody)));
     } else {
-        // Partial Evaluation
+        // For partial evaluation, return a copy of function
         return lval_copy(lfun);
     }
 }

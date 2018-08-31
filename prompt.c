@@ -30,7 +30,7 @@ int main() {
 
     static char *input = (char *)NULL;
 
-    printf("LISPY v0.0.6\n");
+    printf("LISPY v0.0.8\n");
     printf("Enter CTRL+C or, CTRL+D on an empty line to exit\n");
 
     LEnv *lenv = lenv_new();
