@@ -10,6 +10,8 @@ int main() {
     // Create parsers
     mpc_parser_t *Number = mpc_new("num");
     mpc_parser_t *Symbol = mpc_new("sym");
+    mpc_parser_t *String = mpc_new("str");
+    mpc_parser_t *Comment = mpc_new("comment");
     mpc_parser_t *Expression = mpc_new("expr");
     mpc_parser_t *QExpression = mpc_new("qexpr");
     mpc_parser_t *SExpression = mpc_new("sexpr");
@@ -20,13 +22,15 @@ int main() {
         " \
         num: /-?[0-9]+/ ; \
         sym: /[a-zA-Z0-9_+\\-*\\/\\\\=<>!&%]+/ ; \
+        str: /\"(\\\\.|[^\"])*\"/ ; \
+        comment: /;[^\\n^\\r]*/ ; \
         sexpr: '(' <expr>* ')' ; \
         qexpr: '{' <expr>* '}' ; \
-        expr: <num> | <sym> | <sexpr> | <qexpr> ; \
+        expr: <num> | <sym> | <str> | <comment> | <sexpr> | <qexpr> ; \
         lisp: /^/ <expr>* /$/ ; \
     ";
-    mpca_lang(MPCA_LANG_DEFAULT, lang, Number, Symbol, SExpression, QExpression,
-              Expression, Notation);
+    mpca_lang(MPCA_LANG_DEFAULT, lang, Number, Symbol, String, Comment,
+              SExpression, QExpression, Expression, Notation);
 
     static char *input = (char *)NULL;
 
@@ -66,8 +70,8 @@ int main() {
 
     lenv_del(lenv);
 
-    mpc_cleanup(6, Number, Symbol, SExpression, Expression, QExpression,
-                Notation);
+    mpc_cleanup(8, Number, Symbol, String, Comment, SExpression, Expression,
+                QExpression, Notation);
     free(input);
     return 0;
 }

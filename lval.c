@@ -103,6 +103,13 @@ LVal *lval_wrap_lbuiltin(LBuiltin lbuiltin);
  */
 LVal *lval_wrap_lambda(LVal *lformals, LVal *lbody);
 
+/**
+ * @brief  Wrap a string as a LVal
+ * @param  *str: The string to be wrapped
+ * @retval A LVal of type LVAL_STR
+ */
+LVal *lval_wrap_str(char *str);
+
 /* Functions to operate on LVal */
 
 /**
@@ -247,6 +254,13 @@ LVal *lval_read_ast(mpc_ast_t *node);
  */
 LVal *lval_read_long(mpc_ast_t *node);
 
+/**
+ * @brief  Handle unescaped wrapping of LVAL_STR
+ * @param  *node: AST node having string as its contents
+ * @retval A LVal of type
+ */
+LVal *lval_read_str(mpc_ast_t *node);
+
 /* LVal printing methods */
 
 /**
@@ -278,6 +292,13 @@ void lval_print_expr(LVal *lval, char open, char close);
 void lval_print_sexpr(LVal *lval);
 // lval_print_expr wrapper for Q-Expressions
 void lval_print_qexpr(LVal *lval);
+
+/**
+ * @brief  Print a escaped string
+ * @param  *lstr: A LVal of type LVAL_STR
+ * @retval None
+ */
+void lval_print_str(LVal *lstr);
 
 /**
  * @brief  Print type of LVal
@@ -506,6 +527,14 @@ LVal *lval_wrap_lambda(LVal *lformals, LVal *lbody) {
     return llambda;
 }
 
+LVal *lval_wrap_str(char *str) {
+    LVal *lstr = malloc(sizeof(LVal));
+    lstr->type = LVAL_STR;
+    lstr->str = malloc(strlen(str) + 1);
+    strcpy(lstr->str, str);
+    return lstr;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 /* Functions to operate on LVal struct */
 ///////////////////////////////////////////////////////////////////////////////
@@ -526,6 +555,9 @@ void lval_del(LVal *lval) {
             break;
         case LVAL_SYM:
             free(lval->sym);
+            break;
+        case LVAL_STR:
+            free(lval->str);
             break;
         case LVAL_SEXPR:
         case LVAL_QEXPR:
@@ -562,6 +594,10 @@ LVal *lval_copy(LVal *lval) {
         case LVAL_ERR:
             copy->err = malloc(strlen(lval->err) + 1);
             strcpy(copy->err, lval->err);
+            break;
+        case LVAL_STR:
+            copy->str = malloc(strlen(lval->str) + 1);
+            strcpy(copy->str, lval->str);
             break;
         case LVAL_SEXPR:
         case LVAL_QEXPR:
@@ -733,6 +769,8 @@ int lval_eq(LVal *first, LVal *second) {
             return (strcmp(first->err, second->err) == 0);
         case LVAL_SYM:
             return (strcmp(first->sym, second->sym) == 0);
+        case LVAL_STR:
+            return (strcmp(first->str, second->str) == 0);
         case LVAL_FUN:
             if (first->lbuiltin || second->lbuiltin) {
                 return (first->lbuiltin == second->lbuiltin);
@@ -856,12 +894,33 @@ LVal *lval_read_long(mpc_ast_t *node) {
                            : lval_wrap_err("Number too large!");
 }
 
+LVal *lval_read_str(mpc_ast_t *node) {
+    // Chops of ending quote
+    node->contents[strlen(node->contents) - 1] = '\0';
+
+    // Copies string without starting quote
+    char *unescaped = malloc(strlen(node->contents + 1) + 1);
+    unescaped = strcpy(unescaped, node->contents + 1);
+
+    // Unescape string
+    unescaped = mpcf_unescape(unescaped);
+
+    LVal *lstr = lval_wrap_str(unescaped);
+
+    free(unescaped);
+    return lstr;
+}
+
 LVal *lval_read_ast(mpc_ast_t *node) {
     if (strstr(node->tag, "num")) {
         return lval_read_long(node);
     }
     if (strstr(node->tag, "sym")) {
         return lval_wrap_sym(node->contents);
+    }
+
+    if (strstr(node->tag, "str")) {
+        return lval_read_str(node);
     }
 
     LVal *root = NULL;
@@ -876,7 +935,8 @@ LVal *lval_read_ast(mpc_ast_t *node) {
             (strcmp(node->children[i]->contents, ")") == 0) ||
             (strcmp(node->children[i]->contents, "{") == 0) ||
             (strcmp(node->children[i]->contents, "}") == 0) ||
-            (strcmp(node->children[i]->tag, "regex") == 0)) {
+            (strcmp(node->children[i]->tag, "regex") == 0) ||
+            (strstr(node->children[i]->tag, "comment"))) {
             continue;
         } else {
             root = lval_add(root, lval_read_ast(node->children[i]));
@@ -911,6 +971,9 @@ void lval_print(LVal *lval) {
         case LVAL_SYM:
             printf("%s", lval->sym);
             break;
+        case LVAL_STR:
+            lval_print_str(lval);
+            break;
         case LVAL_SEXPR:
             lval_print_sexpr(lval);
             break;
@@ -920,6 +983,11 @@ void lval_print(LVal *lval) {
         default:
             break;
     }
+}
+
+void lval_println(LVal *lval) {
+    lval_print(lval);
+    printf("\n");
 }
 
 void lval_print_expr(LVal *lval, char open, char close) {
@@ -938,9 +1006,12 @@ void lval_print_sexpr(LVal *lval) { lval_print_expr(lval, '(', ')'); }
 
 void lval_print_qexpr(LVal *lval) { lval_print_expr(lval, '{', '}'); }
 
-void lval_println(LVal *lval) {
-    lval_print(lval);
-    printf("\n");
+void lval_print_str(LVal *lstr) {
+    char *escaped = malloc(strlen(lstr->str) + 1);
+    strcpy(escaped, lstr->str);
+    escaped = mpcf_escape(escaped);
+    printf("\"%s\"", escaped);
+    free(escaped);
 }
 
 char *lval_print_type(int type) {
@@ -953,6 +1024,8 @@ char *lval_print_type(int type) {
             return "Symbol";
         case LVAL_ERR:
             return "Error";
+        case LVAL_STR:
+            return "String";
         case LVAL_QEXPR:
             return "Quoted Expression";
         case LVAL_SEXPR:

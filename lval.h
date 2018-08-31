@@ -10,7 +10,15 @@ typedef struct LVal LVal;
 typedef struct LEnv LEnv;
 
 /* LVal Types */
-enum { LVAL_NUM, LVAL_ERR, LVAL_SYM, LVAL_SEXPR, LVAL_QEXPR, LVAL_FUN };
+enum {
+    LVAL_NUM,
+    LVAL_ERR,
+    LVAL_SYM,
+    LVAL_STR,
+    LVAL_SEXPR,
+    LVAL_QEXPR,
+    LVAL_FUN
+};
 
 /**
  * @brief  A function pointer for LBuiltins
@@ -33,6 +41,7 @@ struct LVal {
     long num;
     char *err;
     char *sym;
+    char *str;
 
     /* Functions */
     LBuiltin lbuiltin;

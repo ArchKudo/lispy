@@ -279,3 +279,12 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 ## Update 37
 
 - Released lispy v0.0.9!
+
+## Update 38
+
+- Support for strings
+- Updated corresponding functions/parser syntax
+- Added support functions for printing/reading strings
+- Added related documentation
+- Also some code movement
+- Added support for comments
