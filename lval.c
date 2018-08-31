@@ -145,6 +145,25 @@ LVal *lval_pop(LVal *lval, int index);
 LVal *lval_take(LVal *lval, int index);
 
 /**
+ * @brief  Call a function `lfun` with `largs` as arguments
+ * @note   TODO: Expand on inner-workings
+ * @param  *lenv: The LEnv where the lfun will be stored
+ * @param  *lfun: A `lbuiltin` / local function
+ * @param  *largs: The arguments to be passed to the function `lfun`
+ * @retval A partial or complete evaluation of function on exhausting its
+ * formals
+ */
+LVal *lval_call(LEnv *lenv, LVal *lfun, LVal *largs);
+
+/**
+ * @brief  Compare two LVal's
+ * @param  *first: The first LVal
+ * @param  *second: The second LVal
+ * @retval 1 if they are equal, 0 otherwise
+ */
+int lval_eq(LVal *first, LVal *second);
+
+/**
  * @brief  Evaluate an LVal
  * @note   Fetches symbols from LEnv, Handles SEXPR, or just returns LVal
  * @param  *lenv: LEnv from which the symbols must be fetched
@@ -322,6 +341,23 @@ LVal *builtin_join(LEnv *lenv, LVal *lval);
 LVal *builtin_op(LEnv *lenv, LVal *lval, char *op);
 
 /**
+ * @brief  Evaluate comparision between two LVAL_NUM
+ * @param  *lenv: Not used/Cast to void/Required for adding to a LEnv
+ * @param  *lval: A LVal having children who are to be compared
+ * @param  *op: The operator as a string
+ * @retval Result wrapped as a LVal
+ */
+LVal *builtin_cmp(LEnv *lenv, LVal *lval, char *op);
+
+/**
+ * @brief  A builtin for if conditional
+ * @param  *lenv: The corresponding lval
+ * @param  *lval: The lval containing the condition and body
+ * @retval Evaluation of lval which is in true condition
+ */
+LVal *builtin_if(LEnv *lenv, LVal *lval);
+
+/**
  * @brief  Builtins for lambda expressions
  * @param  *lenv: The default LEnv
  * @param  *lval: LVal having two child QEXPR for lformals and lbody
@@ -345,6 +381,31 @@ LVal *builtin_def(LEnv *lenv, LVal *lval);
 
 /* A wrapper to builtin_var for local definitions */
 LVal *builtin_put(LEnv *lenv, LVal *lval);
+
+/* Wrappers for single operations of builtin_op */
+LVal *builtin_add(LEnv *lenv, LVal *lval);
+
+LVal *builtin_sub(LEnv *lenv, LVal *lval);
+
+LVal *builtin_mul(LEnv *lenv, LVal *lval);
+
+LVal *builtin_div(LEnv *lenv, LVal *lval);
+
+LVal *builtin_mod(LEnv *lenv, LVal *lval);
+
+/* Wrappers for single operations of builtin_ord */
+LVal *builtin_gt(LEnv *lenv, LVal *lval);
+
+LVal *builtin_lt(LEnv *lenv, LVal *lval);
+
+LVal *builtin_ge(LEnv *lenv, LVal *lval);
+
+LVal *builtin_le(LEnv *lenv, LVal *lval);
+
+/* Wrappers for single operations of builtin_cmp */
+LVal *builtin_eq(LEnv *lenv, LVal *lval);
+
+LVal *builtin_ne(LEnv *lenv, LVal *lval);
 
 /**
  * @brief  Associate a builtin and its symbol in a LEnv
@@ -583,7 +644,7 @@ LVal *lval_call(LEnv *lenv, LVal *lfun, LVal *largs) {
         if (lfun->lformals->child_count == 0) {
             lval_del(largs);
             return lval_wrap_err(
-                "Function was passed too many arguments!"
+                "Function was passed too many arguments!\n"
                 "Got %i, Expected %i",
                 nargs, nparams);
         }
@@ -655,6 +716,43 @@ LVal *lval_call(LEnv *lenv, LVal *lfun, LVal *largs) {
     } else {
         // For partial evaluation, return a copy of function
         return lval_copy(lfun);
+    }
+}
+
+int lval_eq(LVal *first, LVal *second) {
+    if (first->type != second->type) {
+        return 0;
+    }
+
+    int type = first->type;
+
+    switch (type) {
+        case LVAL_NUM:
+            return (first->num == second->num);
+        case LVAL_ERR:
+            return (strcmp(first->err, second->err) == 0);
+        case LVAL_SYM:
+            return (strcmp(first->sym, second->sym) == 0);
+        case LVAL_FUN:
+            if (first->lbuiltin || second->lbuiltin) {
+                return (first->lbuiltin == second->lbuiltin);
+            } else {
+                return (lval_eq(first->lformals, second->lformals) &&
+                        lval_eq(first->lbody, second->lbody));
+            }
+        case LVAL_QEXPR:
+        case LVAL_SEXPR:
+            if (first->child_count != second->child_count) {
+                return 0;
+            }
+            for (int i = 0; i < first->child_count; i++) {
+                if (!lval_eq(first->children[i], second->children[i])) {
+                    return 0;
+                }
+            }
+            return 1;
+        default:
+            return 0;
     }
 }
 
@@ -865,6 +963,7 @@ char *lval_print_type(int type) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+/* Functions to evaluate LVal */
 ///////////////////////////////////////////////////////////////////////////////
 
 LVal *lval_eval_sexpr(LEnv *lenv, LVal *lval) {
@@ -1066,24 +1165,76 @@ LVal *builtin_op(LEnv *lenv, LVal *lval, char *op) {
     return first;
 }
 
-LVal *builtin_add(LEnv *lenv, LVal *lval) {
-    return builtin_op(lenv, lval, "+");
-}
-
-LVal *builtin_sub(LEnv *lenv, LVal *lval) {
-    return builtin_op(lenv, lval, "-");
-}
-
-LVal *builtin_mul(LEnv *lenv, LVal *lval) {
-    return builtin_op(lenv, lval, "*");
-}
-
-LVal *builtin_div(LEnv *lenv, LVal *lval) {
-    return builtin_op(lenv, lval, "/");
-}
-
 LVal *builtin_mod(LEnv *lenv, LVal *lval) {
     return builtin_op(lenv, lval, "%");
+}
+
+LVal *builtin_ord(LEnv *lenv, LVal *lval, char *op) {
+    (void)lenv;
+
+    LASSERT_CHILD_COUNT(op, lval, 2);
+    LASSERT_CHILD_TYPE(op, lval, 0, LVAL_NUM);
+    LASSERT_CHILD_TYPE(op, lval, 1, LVAL_NUM);
+
+    long result = 0;
+    long first = lval->children[0]->num;
+    long second = lval->children[1]->num;
+
+    if (strcmp(op, "<") == 0) {
+        result = (first < second);
+    } else if (strcmp(op, ">") == 0) {
+        result = (first > second);
+    } else if (strcmp(op, "<=") == 0) {
+        result = (first <= second);
+    } else if (strcmp(op, ">=") == 0) {
+        result = (first >= second);
+    }
+
+    lval_del(lval);
+    return lval_wrap_long(result);
+}
+
+LVal *builtin_cmp(LEnv *lenv, LVal *lval, char *op) {
+    (void)lenv;
+
+    LASSERT_CHILD_COUNT(op, lval, 2);
+
+    int result = 0;
+    LVal *first = lval->children[0];
+    LVal *second = lval->children[1];
+
+    if (strcmp(op, "==") == 0) {
+        result = lval_eq(first, second);
+    } else if (strcmp(op, "!=") == 0) {
+        result = !lval_eq(first, second);
+    }
+
+    lval_del(lval);
+    return lval_wrap_long(result);
+}
+
+LVal *builtin_if(LEnv *lenv, LVal *lval) {
+    LASSERT_CHILD_COUNT("if", lval, 3);
+
+    LASSERT_CHILD_TYPE("if", lval, 0, LVAL_NUM);
+    LASSERT_CHILD_TYPE("if", lval, 1, LVAL_QEXPR);
+    LASSERT_CHILD_TYPE("if", lval, 2, LVAL_QEXPR);
+
+    LVal *result;
+
+    // Convert expressions to be evaluable
+    lval->children[1]->type = LVAL_SEXPR;
+    lval->children[2]->type = LVAL_SEXPR;
+
+    if (lval->children[0]->num) {
+        result = lval_eval(lenv, lval_pop(lval, 1));
+    } else {
+        result = lval_eval(lenv, lval_pop(lval, 2));
+    }
+
+    lval_del(lval);
+
+    return result;
 }
 
 LVal *builtin_var(LEnv *lenv, LVal *lval, char *fun) {
@@ -1153,6 +1304,43 @@ LVal *builtin_put(LEnv *lenv, LVal *lval) {
     return builtin_var(lenv, lval, "=");
 }
 
+LVal *builtin_add(LEnv *lenv, LVal *lval) {
+    return builtin_op(lenv, lval, "+");
+}
+
+LVal *builtin_sub(LEnv *lenv, LVal *lval) {
+    return builtin_op(lenv, lval, "-");
+}
+
+LVal *builtin_mul(LEnv *lenv, LVal *lval) {
+    return builtin_op(lenv, lval, "*");
+}
+
+LVal *builtin_div(LEnv *lenv, LVal *lval) {
+    return builtin_op(lenv, lval, "/");
+}
+
+LVal *builtin_gt(LEnv *lenv, LVal *lval) {
+    return builtin_ord(lenv, lval, ">");
+}
+LVal *builtin_lt(LEnv *lenv, LVal *lval) {
+    return builtin_ord(lenv, lval, "<");
+}
+LVal *builtin_ge(LEnv *lenv, LVal *lval) {
+    return builtin_ord(lenv, lval, ">=");
+}
+LVal *builtin_le(LEnv *lenv, LVal *lval) {
+    return builtin_ord(lenv, lval, "<=");
+}
+
+LVal *builtin_eq(LEnv *lenv, LVal *lval) {
+    return builtin_cmp(lenv, lval, "==");
+}
+
+LVal *builtin_ne(LEnv *lenv, LVal *lval) {
+    return builtin_cmp(lenv, lval, "!=");
+}
+
 void lenv_add_builtin(LEnv *lenv, char *sym, LBuiltin lbuiltin) {
     LVal *lsym = lval_wrap_sym(sym);
     LVal *lfun = lval_wrap_lbuiltin(lbuiltin);
@@ -1178,7 +1366,16 @@ void lenv_init_builtins(LEnv *lenv) {
     lenv_add_builtin(lenv, "/", builtin_div);
     lenv_add_builtin(lenv, "%", builtin_mod);
     lenv_add_builtin(lenv, "=", builtin_put);
+
+    lenv_add_builtin(lenv, "if", builtin_if);
+    lenv_add_builtin(lenv, "==", builtin_eq);
+    lenv_add_builtin(lenv, "!=", builtin_ne);
+    lenv_add_builtin(lenv, ">", builtin_gt);
+    lenv_add_builtin(lenv, "<", builtin_lt);
+    lenv_add_builtin(lenv, ">=", builtin_ge);
+    lenv_add_builtin(lenv, "<=", builtin_le);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+/* LVAL_C */
 ///////////////////////////////////////////////////////////////////////////////

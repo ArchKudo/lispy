@@ -267,3 +267,11 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 
 - Added some comments
 - Released lispy v0.0.8!
+
+## Update 36
+
+- Added builtins for conditionals
+- Added declaration of a couple of functions and descriptive comments
+- Added if builtin
+- Added a missing `\n`
+- Moved some code within the file
