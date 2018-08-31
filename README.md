@@ -275,3 +275,7 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Added if builtin
 - Added a missing `\n`
 - Moved some code within the file
+
+## Update 37
+
+- Released lispy v0.0.9!
