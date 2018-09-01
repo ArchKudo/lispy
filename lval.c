@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <string.h>
 #include "mpc.h"
+#include "parser.h"
 
 #define MAX_ERR 4096
 
@@ -403,6 +404,29 @@ LVal *builtin_def(LEnv *lenv, LVal *lval);
 /* A wrapper to builtin_var for local definitions */
 LVal *builtin_put(LEnv *lenv, LVal *lval);
 
+/**
+ * @brief  Load files containing valid lispy expression
+ * @param  *lenv: The environment where the expressions are loaded
+ * @param  *lval: The LVal containing the filename
+ * @retval A LVal of result or LVAL_ERR on error
+ */
+LVal *builtin_load(LEnv *lenv, LVal *lval);
+
+/**
+ * @brief  Print a expression
+ * @param  *lenv: A LEnv
+ * @param  *lval: A LVal containing the expressions
+ * @retval A LVal of type LVAL_SEXPR
+ */
+LVal *builtin_print(LEnv *lenv, LVal *lval);
+
+/**
+ * @brief  Create a LVAL_ERR from string
+ * @param  *lenv: A LEnv
+ * @param  *lval: LVal containing error string
+ * @retval A LVal of type LVAL_ERR
+ */
+LVal *builtin_err(LEnv *lenv, LVal *lval);
 /* Wrappers for single operations of builtin_op */
 LVal *builtin_add(LEnv *lenv, LVal *lval);
 
@@ -1369,6 +1393,62 @@ LVal *builtin_lambda(LEnv *lenv, LVal *lval) {
     return lval_wrap_lambda(lformals, lbody);
 }
 
+LVal *builtin_load(LEnv *lenv, LVal *lval) {
+    LASSERT_CHILD_COUNT("load", lval, 1);
+    LASSERT_CHILD_TYPE("load", lval, 0, LVAL_STR);
+
+    mpc_result_t result;
+
+    if (mpc_parse_contents(lval->children[0]->str, Notation, &result)) {
+        LVal *lexpr = lval_read_ast(result.output);
+        mpc_ast_delete(result.output);
+
+        while (lexpr->child_count) {
+            LVal *leval = lval_eval(lenv, lval_pop(lexpr, 0));
+            if (leval->type == LVAL_ERR) {
+                lval_println(leval);
+            }
+            lval_del(leval);
+        }
+
+        lval_del(lexpr);
+        lval_del(lval);
+
+        return lval_wrap_sexpr();
+    } else {
+        char *err = mpc_err_string(result.error);
+        mpc_err_delete(result.error);
+
+        LVal *lerr = lval_wrap_err("Could not load file: %s", err);
+        free(err);
+        lval_del(lval);
+
+        return lerr;
+    }
+}
+
+LVal *builtin_print(LEnv *lenv, LVal *lval) {
+    (void)lenv;
+    for (int i = 0; i < lval->child_count; i++) {
+        lval_print(lval->children[i]);
+        printf(" ");
+    }
+    printf("\n");
+    lval_del(lval);
+
+    return lval_wrap_sexpr();
+}
+
+LVal *builtin_err(LEnv *lenv, LVal *lval) {
+    (void)lenv;
+    LASSERT_CHILD_COUNT("error", lval, 1);
+    LASSERT_CHILD_TYPE("error", lval, 0, LVAL_STR);
+
+    LVal *lerr = lval_wrap_err(lval->children[0]->str);
+
+    lval_del(lval);
+    return lerr;
+}
 LVal *builtin_def(LEnv *lenv, LVal *lval) {
     return builtin_var(lenv, lval, "def");
 }
@@ -1447,6 +1527,10 @@ void lenv_init_builtins(LEnv *lenv) {
     lenv_add_builtin(lenv, "<", builtin_lt);
     lenv_add_builtin(lenv, ">=", builtin_ge);
     lenv_add_builtin(lenv, "<=", builtin_le);
+
+    lenv_add_builtin(lenv, "load", builtin_load);
+    lenv_add_builtin(lenv, "print", builtin_print);
+    lenv_add_builtin(lenv, "err", builtin_err);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

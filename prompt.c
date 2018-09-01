@@ -2,20 +2,30 @@
 
 #include "lval.h"
 #include "mpc.h"
+#include "parser.h"
 
 #define TRUE 1
 #define FALSE 0
 
-int main() {
+mpc_parser_t *Number;
+mpc_parser_t *Symbol;
+mpc_parser_t *String;
+mpc_parser_t *Comment;
+mpc_parser_t *Expression;
+mpc_parser_t *QExpression;
+mpc_parser_t *SExpression;
+mpc_parser_t *Notation;
+
+int main(int argc, char *argv[]) {
     // Create parsers
-    mpc_parser_t *Number = mpc_new("num");
-    mpc_parser_t *Symbol = mpc_new("sym");
-    mpc_parser_t *String = mpc_new("str");
-    mpc_parser_t *Comment = mpc_new("comment");
-    mpc_parser_t *Expression = mpc_new("expr");
-    mpc_parser_t *QExpression = mpc_new("qexpr");
-    mpc_parser_t *SExpression = mpc_new("sexpr");
-    mpc_parser_t *Notation = mpc_new("lisp");
+    Number = mpc_new("num");
+    Symbol = mpc_new("sym");
+    String = mpc_new("str");
+    Comment = mpc_new("comment");
+    Expression = mpc_new("expr");
+    QExpression = mpc_new("qexpr");
+    SExpression = mpc_new("sexpr");
+    Notation = mpc_new("lisp");
 
     // Define the above parsers with patterns + regex
     const char *lang =
@@ -34,37 +44,47 @@ int main() {
 
     static char *input = (char *)NULL;
 
-    printf("LISPY v0.0.9\n");
+    printf("LISPY v0.0.10\n");
     printf("Enter CTRL+C or, CTRL+D on an empty line to exit\n");
 
     LEnv *lenv = lenv_new();
     lenv_init_builtins(lenv);
+    if (argc == 1) {
+        while (TRUE) {
+            mpc_result_t result;
 
-    while (TRUE) {
-        mpc_result_t result;
+            if (input) {
+                free(input);
+                input = (char *)NULL;
+            }
 
-        if (input) {
-            free(input);
-            input = (char *)NULL;
+            input = readline("lispy> ");
+
+            if (input) {
+                add_history(input);
+            } else {  // Handle EOF
+                printf("\nBye!");
+                break;
+            }
+
+            if (mpc_parse("<stdin>", input, Notation, &result)) {
+                LVal *lval = lval_eval(lenv, lval_read_ast(result.output));
+                lval_println(lval);
+                lval_del(lval);
+                mpc_ast_delete(result.output);
+            } else {
+                mpc_err_print(result.error);
+                mpc_err_delete(result.error);
+            }
         }
-
-        input = readline("lispy> ");
-
-        if (input) {
-            add_history(input);
-        } else {  // Handle EOF
-            printf("\nBye!");
-            break;
-        }
-
-        if (mpc_parse("<stdin>", input, Notation, &result)) {
-            LVal *lval = lval_eval(lenv, lval_read_ast(result.output));
-            lval_println(lval);
-            lval_del(lval);
-            mpc_ast_delete(result.output);
-        } else {
-            mpc_err_print(result.error);
-            mpc_err_delete(result.error);
+    } else if (argc >= 2) {
+        for (int i = 1; i < argc; i++) {
+            LVal *largs = lval_add(lval_wrap_sexpr(), lval_wrap_str(argv[i]));
+            LVal *lfile = builtin_load(lenv, largs);
+            if (lfile->type == LVAL_ERR) {
+                lval_println(lfile);
+            }
+            lval_del(lfile);
         }
     }
 

@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-std=c99 \
-		-pedantic -O3 -g -Wall -Werror -Wextra \
+		-pedantic -O3 -g -Wall -Werror -Wextra
 
 LDFLAGS=-ledit -lncurses
 

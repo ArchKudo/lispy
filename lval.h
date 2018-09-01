@@ -120,4 +120,34 @@ void lenv_del(LEnv *lenv);
  */
 void lenv_init_builtins(LEnv *lenv);
 
+/**
+ * @brief  Add a LVal to another LVal
+ * @param  *parent: The parent LVal, the child is added to this LVal
+ * @param  *child: The child LVal which needs to be added
+ * @retval Returns the parent LVal
+ */
+LVal *lval_add(LVal *parent, LVal *child);
+
+/**
+ * @brief  Create a empty S-Expression
+ * @note   Wrapper for lval_wrap_expr
+ * @retval A LVal with type LVAL_SEXPR
+ */
+LVal *lval_wrap_sexpr(void);
+
+/**
+ * @brief  Wrap a string as a LVal
+ * @param  *str: The string to be wrapped
+ * @retval A LVal of type LVAL_STR
+ */
+LVal *lval_wrap_str(char *str);
+
+/**
+ * @brief  Load files containing valid lispy expression
+ * @param  *lenv: The environment where the expressions are loaded
+ * @param  *lval: The LVal containing the filename
+ * @retval A LVal of result or LVAL_ERR on error
+ */
+LVal *builtin_load(LEnv *lenv, LVal *lval);
+
 #endif /* lval.h */

@@ -288,3 +288,13 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Added related documentation
 - Also some code movement
 - Added support for comments
+
+## Update 39
+
+- Parsers are now declared in [parsers.h](./parsers.h) for sharing globals
+- Added support for loading files using `mpc_parse_contents`
+- Added support for printing strings
+- Added support for creating errors from strings
+- Added more functions required by `prompt.c` to `lval.h`
+- Added support for running files using command-line arguments
+- Released lispy v0.0.10!
