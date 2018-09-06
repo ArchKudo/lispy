@@ -10,6 +10,6 @@ extern mpc_parser_t *Comment;
 extern mpc_parser_t *Expression;
 extern mpc_parser_t *QExpression;
 extern mpc_parser_t *SExpression;
-extern mpc_parser_t *Notation;
+extern mpc_parser_t *Lisp;
 
 #endif

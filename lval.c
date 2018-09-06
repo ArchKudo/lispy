@@ -1399,7 +1399,7 @@ LVal *builtin_load(LEnv *lenv, LVal *lval) {
 
     mpc_result_t result;
 
-    if (mpc_parse_contents(lval->children[0]->str, Notation, &result)) {
+    if (mpc_parse_contents(lval->children[0]->str, Lisp, &result)) {
         LVal *lexpr = lval_read_ast(result.output);
         mpc_ast_delete(result.output);
 

@@ -55,7 +55,7 @@ struct LVal {
 };
 
 /**
- * @brief  A struct to store variables with their (l)values
+ * @brief  A struct to store symbols with their (l)values
  * @note   LEnv maybe local to function or the parent environment
  */
 struct LEnv {

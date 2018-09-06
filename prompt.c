@@ -14,7 +14,7 @@ mpc_parser_t *Comment;
 mpc_parser_t *Expression;
 mpc_parser_t *QExpression;
 mpc_parser_t *SExpression;
-mpc_parser_t *Notation;
+mpc_parser_t *Lisp;
 
 int main(int argc, char *argv[]) {
     // Create parsers
@@ -22,10 +22,10 @@ int main(int argc, char *argv[]) {
     Symbol = mpc_new("sym");
     String = mpc_new("str");
     Comment = mpc_new("comment");
-    Expression = mpc_new("expr");
-    QExpression = mpc_new("qexpr");
     SExpression = mpc_new("sexpr");
-    Notation = mpc_new("lisp");
+    QExpression = mpc_new("qexpr");
+    Expression = mpc_new("expr");
+    Lisp = mpc_new("lisp");
 
     // Define the above parsers with patterns + regex
     const char *lang =
@@ -40,15 +40,18 @@ int main(int argc, char *argv[]) {
         lisp: /^/ <expr>* /$/ ; \
     ";
     mpca_lang(MPCA_LANG_DEFAULT, lang, Number, Symbol, String, Comment,
-              SExpression, QExpression, Expression, Notation);
+              SExpression, QExpression, Expression, Lisp);
 
     static char *input = (char *)NULL;
 
     printf("LISPY v0.0.10\n");
     printf("Enter CTRL+C or, CTRL+D on an empty line to exit\n");
 
-    LEnv *lenv = lenv_new();
-    lenv_init_builtins(lenv);
+    // Create the parent LEnv
+    LEnv *lparent = lenv_new();
+
+    // Add the default builtins to the parent LEnv
+    lenv_init_builtins(lparent);
     if (argc == 1) {
         while (TRUE) {
             mpc_result_t result;
@@ -67,8 +70,8 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            if (mpc_parse("<stdin>", input, Notation, &result)) {
-                LVal *lval = lval_eval(lenv, lval_read_ast(result.output));
+            if (mpc_parse("<stdin>", input, Lisp, &result)) {
+                LVal *lval = lval_eval(lparent, lval_read_ast(result.output));
                 lval_println(lval);
                 lval_del(lval);
                 mpc_ast_delete(result.output);
@@ -80,7 +83,7 @@ int main(int argc, char *argv[]) {
     } else if (argc >= 2) {
         for (int i = 1; i < argc; i++) {
             LVal *largs = lval_add(lval_wrap_sexpr(), lval_wrap_str(argv[i]));
-            LVal *lfile = builtin_load(lenv, largs);
+            LVal *lfile = builtin_load(lparent, largs);
             if (lfile->type == LVAL_ERR) {
                 lval_println(lfile);
             }
@@ -88,10 +91,10 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    lenv_del(lenv);
+    lenv_del(lparent);
 
-    mpc_cleanup(8, Number, Symbol, String, Comment, SExpression, Expression,
-                QExpression, Notation);
+    mpc_cleanup(8, Number, Symbol, String, Comment, SExpression, QExpression,
+                Expression, Lisp);
     free(input);
     return 0;
 }
