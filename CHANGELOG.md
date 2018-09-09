@@ -297,7 +297,7 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 
 ## Update 40
 
-- Replaced 
+- Replaced
   - `Notation` => `Lisp`
   - `lenv` => `lparent`
 - Reorder assignments / parameters
@@ -306,3 +306,8 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Added stub files for standard library [stdlib.lspy](./stdlib.lspy) and,
 - Explanations of internals at [INTERNALS.md](./INTERNALS.md)
 
+## Update 41
+
+- Split [lval.c](./lval.c)
+- Added declarations for `lval_copy`
+- Updated Makefile

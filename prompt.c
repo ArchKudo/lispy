@@ -1,6 +1,6 @@
 #include <editline/readline.h>
 
-#include "lval.h"
+#include "lispy.h"
 #include "mpc.h"
 #include "parser.h"
 

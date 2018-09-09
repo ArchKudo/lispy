@@ -39,6 +39,10 @@ lispy> + 9223372036854775807 1 ; This is a bug which requires fixing, Currently 
 
 ## Strings
 
+## Comments
+
 ## Language Builtins
+
+## Lambda Expressions
 
 ## Standard Library

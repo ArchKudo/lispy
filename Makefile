@@ -6,7 +6,7 @@ LDFLAGS=-ledit -lncurses
 
 
 
-prompt: prompt.o mpc.o lval.o
+prompt: prompt.o mpc.o lval.o last.o lbuiltin.o lenv.o lprint.o lwrap.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 %.o: %.c
