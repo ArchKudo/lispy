@@ -1,5 +1,5 @@
 #include <editline/readline.h>
-
+#include <stdlib.h>
 #include "lispy.h"
 #include "mpc.h"
 #include "parser.h"

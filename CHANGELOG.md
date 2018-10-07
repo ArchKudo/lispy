@@ -311,3 +311,10 @@ Created [lval.h](./lval.h) and [lval.c](./lval.c)
 - Split [lval.c](./lval.c)
 - Added declarations for `lval_copy`
 - Updated Makefile
+
+## Update 42
+
+- Moved `*.c` files to [src/](./src/)
+- Moved `*.h` files to [include/](./include/)
+- Updated Makefile
+- Changed symlinks for including additional depth
